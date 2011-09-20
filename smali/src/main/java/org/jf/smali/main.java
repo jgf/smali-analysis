@@ -28,25 +28,45 @@
 
 package org.jf.smali;
 
-import org.antlr.runtime.*;
-import org.antlr.runtime.tree.CommonTree;
-import org.antlr.runtime.tree.CommonTreeNodeStream;
-import org.apache.commons.cli.*;
-import org.jf.dexlib.CodeItem;
-import org.jf.dexlib.DexFile;
-import org.jf.dexlib.Util.ByteArrayAnnotatedOutput;
-import org.jf.util.ConsoleUtil;
-import org.jf.util.smaliHelpFormatter;
-
-import java.io.*;
-import java.nio.CharBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+
+import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.Token;
+import org.antlr.runtime.TokenSource;
+import org.antlr.runtime.tree.CommonTree;
+import org.antlr.runtime.tree.CommonTreeNodeStream;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
+import org.jf.dexlib.ClassDataItem;
+import org.jf.dexlib.ClassDataItem.EncodedMethod;
+import org.jf.dexlib.ClassDefItem;
+import org.jf.dexlib.CodeItem;
+import org.jf.dexlib.DexFile;
+import org.jf.dexlib.Code.Analysis.AnalyzedInstruction;
+import org.jf.dexlib.Code.Analysis.ClassPath;
+import org.jf.dexlib.Code.Analysis.MethodAnalyzer;
+import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
+import org.jf.dexlib.Util.ByteArrayAnnotatedOutput;
+import org.jf.util.ClassFileNameHandler;
+import org.jf.util.ConsoleUtil;
+import org.jf.util.smaliHelpFormatter;
 
 /**
  * Main class for smali. It recognizes enough options to be able to dispatch
@@ -104,9 +124,18 @@ public class main {
         boolean verboseErrors = false;
         boolean oldLexer = false;
         boolean printTokens = false;
-
+        boolean graphCFG = false;   // dump control flow graphs
+        boolean graphCDG = false;   // dump control dependence graphs
+        boolean graphDOM = false;   // dump dominator trees
+        boolean graphIncludeExceptions = false;   // include uncatched exceptions
+         
+        String outputGraphDir = "./out/"; // use ./out/ if not set
         String outputDexFile = "out.dex";
         String dumpFileName = null;
+        String bootClassPath = null; // only used for analysis needed for graph computation
+        StringBuffer extraBootClassPathEntries = new StringBuffer();
+        List<String> bootClassPathDirs = new ArrayList<String>();
+        bootClassPathDirs.add(".");
 
         String[] remainingArgs = commandLine.getArgs();
 
@@ -153,6 +182,66 @@ public class main {
                 case 'T':
                     printTokens = true;
                     break;
+                case 'd':
+                    bootClassPathDirs.add(option.getValue());
+                    break;
+                case 'c':
+                    String bcp = commandLine.getOptionValue("c");
+                    if (bcp != null && bcp.charAt(0) == ':') {
+                        extraBootClassPathEntries.append(bcp);
+                    } else {
+                        bootClassPath = bcp;
+                    }
+                    break;
+                case 'g': {
+                    String[] values = option.getValue().split(",");
+                    if (values != null && values.length > 0) {
+                        
+                        if (values[values.length - 1].contains("=")) {
+                            // make two seperate args out of the last arg.
+                            // e.g. ['CFG', 'CDG=/tmp'] => ['CFG', 'CDG', '=/tmp']
+                            String[] tmp = new String[values.length + 1];
+                            System.arraycopy(values, 0, tmp, 0, values.length - 1);
+                            final String lastArg = values[values.length - 1];
+                            final int indexOfEq = lastArg.indexOf('=');
+                            tmp[values.length - 1] = lastArg.substring(0, indexOfEq);
+                            tmp[values.length] = lastArg.substring(indexOfEq);
+                            values = tmp;
+                        }
+                        
+                        for (int val = 0; val < values.length; val++) {
+                            final String value = values[val];
+                            if (value.equalsIgnoreCase("CFG")) {
+                                graphCFG = true;
+                            } else if (value.equalsIgnoreCase("DOM")) {
+                                graphDOM = true;
+                            } else if (value.equalsIgnoreCase("CDG")) {
+                                graphCDG = true;
+                            } else if (value.equalsIgnoreCase("EXC")) {
+                                graphIncludeExceptions = true;
+                            } else if (value.startsWith("=")) {
+                                final String dir = value.substring(1);
+                                
+                                final File testDir = new File(dir);
+                                if (!(testDir.exists() && testDir.isDirectory() && testDir.canWrite()) && !testDir.mkdirs()) {
+                                    System.err.println("'" + dir + "' is not an existing and writable directory and it could not be created.");
+                                    usage();
+                                    return;
+                                } else {
+                                    outputGraphDir = dir;
+                                    // append path seperator if needed
+                                    if (outputGraphDir.length() > 0 && !outputGraphDir.endsWith("" + File.separatorChar)) {
+                                        outputGraphDir += File.separatorChar;
+                                    }
+                                }
+                            } else {
+                                System.err.println("Unknown argument in option '-g': " + value);
+                                usage();
+                                return;
+                            }
+                        }
+                    }
+                	} break;
                 default:
                     assert false;
             }
@@ -205,6 +294,106 @@ public class main {
 
             dexFile.place();
 
+            final boolean dumpGraphs = graphCDG || graphCFG || graphDOM;
+            if (dumpGraphs) {
+                ClassPath.ClassPathErrorHandler classPathErrorHandler = new ClassPath.ClassPathErrorHandler() {
+                    public void ClassPathError(String className, Exception ex) {
+                        System.err.println(String.format("Skipping %s", className));
+                        ex.printStackTrace(System.err);
+                    }
+                };
+
+                String[] extraBootClassPathArray = null;
+                if (extraBootClassPathEntries != null && extraBootClassPathEntries.length() > 0) {
+                    assert extraBootClassPathEntries.charAt(0) == ':';
+                    extraBootClassPathArray = extraBootClassPathEntries.substring(1).split(":");
+                }
+
+                String[] bootClassPathDirsArray = new String[bootClassPathDirs.size()];
+                for (int i=0; i<bootClassPathDirsArray.length; i++) {
+                    bootClassPathDirsArray[i] = bootClassPathDirs.get(i);
+                }
+
+                final String dexFilePath = ".";
+                
+                if (dexFile.isOdex() && bootClassPath == null) {
+                    ClassPath.InitializeClassPathFromOdex(bootClassPathDirsArray, extraBootClassPathArray, dexFilePath, dexFile,
+                            classPathErrorHandler);
+                } else {
+                    String[] bootClassPathArray = null;
+                    if (bootClassPath != null) {
+                        bootClassPathArray = bootClassPath.split(":");
+                    }
+                    ClassPath.InitializeClassPath(bootClassPathDirsArray, bootClassPathArray, extraBootClassPathArray,
+                            dexFilePath, dexFile, classPathErrorHandler);
+                }
+
+                File outputGraphFile = new File(outputGraphDir);
+                if (!outputGraphFile.exists()) {
+                    if (!outputGraphFile.mkdirs()) {
+                        System.err.println("Can't create the graph output directory " + outputGraphDir);
+                        System.exit(1);
+                    }
+                }
+                
+                ClassFileNameHandler graphPrefixNameHandler = new ClassFileNameHandler(outputGraphFile, ".");
+
+                for (ClassDefItem clsDef : dexFile.ClassDefsSection.getItems()) {
+                    String classDescriptor = clsDef.getClassType().getTypeDescriptor();
+                    
+//                    System.out.print("\nWorking on '" + classDescriptor + "': ");
+                    
+                    //validate that the descriptor is formatted like we expect
+                    if (classDescriptor.charAt(0) != 'L' ||
+                        classDescriptor.charAt(classDescriptor.length()-1) != ';') {
+                        System.err.println("Unrecognized class descriptor - " + classDescriptor + " - skipping class");
+                        continue;
+                    }
+
+                    File graphPrefixFile = graphPrefixNameHandler.getUniqueFilenameForClass(classDescriptor);
+                    File graphDir = graphPrefixFile.getParentFile();
+
+                    if (!graphDir.exists()) {
+                        if (!graphDir.mkdirs()) {
+                            System.err.println("Unable to create directory " + graphDir.toString() + " - skipping graph output");
+                            continue;
+                        }
+                    }
+
+                    ClassDataItem clsData = clsDef.getClassData();
+                    if (clsData == null) {
+                        continue;
+                    }
+                    
+                    String filePrefix = graphPrefixFile.toString();
+                    GraphDumper gd = new GraphDumper(filePrefix, graphCFG, graphDOM, graphCDG, graphIncludeExceptions);
+                    
+                    if (clsData.getDirectMethods() != null) {
+                        for (EncodedMethod em : clsData.getDirectMethods()) {
+                            MethodAnalyzer analyze = new MethodAnalyzer(em, false);
+                            analyze.analyze();
+                            List<AnalyzedInstruction> instructions = analyze.getInstructions();
+                            final String mName = em.method.getVirtualMethodString();
+                            gd.dump(instructions, mName);
+                        }
+                    }
+                    
+                    if (clsData.getVirtualMethods() != null) {
+                        for (EncodedMethod em : clsData.getVirtualMethods()) {
+                            if (em.codeItem == null) {
+                                continue;
+                            }
+                            
+                            MethodAnalyzer analyze = new MethodAnalyzer(em, false);
+                            analyze.analyze();
+                            List<AnalyzedInstruction> instructions = analyze.getInstructions();
+                            final String mName = em.method.getVirtualMethodString();
+                            gd.dump(instructions, mName);
+                        }
+                    }
+                }
+            }
+            
             ByteArrayAnnotatedOutput out = new ByteArrayAnnotatedOutput();
 
             if (dumpFileName != null) {
@@ -346,7 +535,7 @@ public class main {
     }
 
     private static void usage() {
-        usage(false);
+        usage(true);
     }
 
     /**
@@ -359,6 +548,7 @@ public class main {
         System.exit(0);
     }
 
+    @SuppressWarnings("static-access")
     private static void buildOptions() {
         Option versionOption = OptionBuilder.withLongOpt("version")
                 .withDescription("prints the version then exits")
@@ -404,6 +594,37 @@ public class main {
                 .withDescription("Print the name and text of each token")
                 .create("T");
 
+        Option classPathOption = OptionBuilder.withLongOpt("bootclasspath")
+        .withDescription("the bootclasspath jars to use, for analysis. Defaults to " +
+                "core.jar:ext.jar:framework.jar:android.policy.jar:services.jar. If the value begins with a " +
+                ":, it will be appended to the default bootclasspath instead of replacing it")
+        .hasOptionalArg()
+        .withArgName("BOOTCLASSPATH")
+        .create("c");
+
+        Option classPathDirOption = OptionBuilder.withLongOpt("bootclasspath-dir")
+                .withDescription("the base folder to look for the bootclasspath files in. Defaults to the current " +
+                        "directory")
+                .hasArg()
+                .withArgName("DIR")
+                .create("d");
+
+        Option dumpGraphOption = OptionBuilder.withLongOpt("dump-graph")
+        .hasArg()
+        .withArgName("DUMP_GRAPHS")
+        .withDescription("write the specificed type(s) of graphs for each method to a .dot file. " +
+                "At least one of the options CFG, DOM or CDG have to be specified. All values " +
+                "have to be seperated with a ',' with NO SPACE between them.\nValid values are:\n" + 
+                "CFG: control flow graph\n" +
+                "DOM: dominator tree\n" + 
+                "CDG: control dependence graph\n" +
+                "EXC: include uncatched exceptions in analysis\n" +
+                "=<DIR>: only valid as last option. Sets the output directory to the specified value. " +
+                "This will override the default behaviour: " +
+                "If not specified otherwise the graph files are put in './out/'.\n" +
+                "Some examples of valid options: '-g CFG,DOM=/tmp', '-g CFG' or '-g CDG,EXC'")
+        .create("g");
+
         basicOptions.addOption(versionOption);
         basicOptions.addOption(helpOption);
         basicOptions.addOption(outputOption);
@@ -415,6 +636,9 @@ public class main {
         debugOptions.addOption(verboseErrorsOption);
         debugOptions.addOption(oldLexerOption);
         debugOptions.addOption(printTokensOption);
+        debugOptions.addOption(classPathOption);
+        debugOptions.addOption(classPathDirOption);
+        debugOptions.addOption(dumpGraphOption);
 
         for (Object option: basicOptions.getOptions()) {
             options.addOption((Option)option);
