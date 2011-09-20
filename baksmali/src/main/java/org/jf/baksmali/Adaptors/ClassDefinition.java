@@ -28,18 +28,32 @@
 
 package org.jf.baksmali.Adaptors;
 
-import org.jf.dexlib.Util.Utf8Utils;
-import org.jf.util.IndentingWriter;
-import org.jf.dexlib.*;
-import org.jf.dexlib.Code.Analysis.ValidationException;
-import org.jf.dexlib.Code.Format.Instruction21c;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.List;
+
+import org.jf.dexlib.AnnotationDirectoryItem;
+import org.jf.dexlib.AnnotationSetItem;
+import org.jf.dexlib.AnnotationSetRefList;
+import org.jf.dexlib.ClassDataItem;
+import org.jf.dexlib.ClassDefItem;
+import org.jf.dexlib.EncodedArrayItem;
+import org.jf.dexlib.FieldIdItem;
+import org.jf.dexlib.MethodIdItem;
+import org.jf.dexlib.StringIdItem;
+import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.TypeListItem;
 import org.jf.dexlib.Code.Instruction;
+import org.jf.dexlib.Code.Analysis.AnalyzedInstruction;
+import org.jf.dexlib.Code.Analysis.MethodAnalyzer;
+import org.jf.dexlib.Code.Analysis.ValidationException;
+import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
+import org.jf.dexlib.Code.Format.Instruction21c;
 import org.jf.dexlib.EncodedValue.EncodedValue;
 import org.jf.dexlib.Util.AccessFlags;
 import org.jf.dexlib.Util.SparseArray;
-
-import java.io.IOException;
-import java.util.List;
+import org.jf.dexlib.Util.Utf8Utils;
+import org.jf.util.IndentingWriter;
 
 public class ClassDefinition {
     private ClassDefItem classDefItem;
@@ -328,6 +342,75 @@ public class ClassDefinition {
                         method.method.getMethodString()));
                 validationException.printStackTrace(System.err);
                 this.validationErrors = true;
+            }
+            
+//            // test code for control flow graph creation
+//            final boolean includeUncatchedExceptions = false;
+//            final CFG cfg = methodDefinition.buildCFG(includeUncatchedExceptions);
+//            System.out.println(cfg);
+//            final String fileName = 
+//            	WriteGraphToDot.sanitizeFileName("cfg-" + method.method.getMethodString() + ".dot");
+//            WriteGraphToDot.write(cfg, fileName);
+//            
+//            {
+//            final Dominators<CFG.Node, CFG.Edge> dom = Dominators.compute(cfg, cfg.getEntry());
+//            final DomTree<CFG.Node> domTree = dom.getDominationTree();
+//            final String domFileName = 
+//            	WriteGraphToDot.sanitizeFileName("dom-" + method.method.getMethodString() + ".dot");
+//            WriteGraphToDot.write(domTree, domFileName);
+//            }
+//            
+//            {
+//        	final DirectedGraph<CFG.Node, CFG.Edge> invCfg = new EdgeReversedGraph<CFG.Node, CFG.Edge>(cfg);
+//            final Dominators<CFG.Node, CFG.Edge> invDom = Dominators.compute(invCfg, cfg.getExit());
+//            final DomTree<CFG.Node> domTree = invDom.getDominationTree();
+//            final String domFileName = 
+//            	WriteGraphToDot.sanitizeFileName("inv-dom-" + method.method.getMethodString() + ".dot");
+//            WriteGraphToDot.write(domTree, domFileName);
+//            
+//            }
+//
+//            final CDG cdg = CDG.build(cfg);
+//            System.out.println(cdg);
+//            final String cdgFileName = 
+//            	WriteGraphToDot.sanitizeFileName("cdg-" + method.method.getMethodString() + ".dot");
+//            WriteGraphToDot.write(cdg, cdgFileName);
+        }
+    }
+
+    public void dumpGraphs(GraphDumper gDump) throws FileNotFoundException {
+        if (classDataItem == null) {
+            System.err.println("No classDataItem for class " + toString());
+            return;
+        }
+
+        ClassDataItem.EncodedMethod[] directMethods = classDataItem.getDirectMethods();
+
+        if (directMethods != null) {
+            for (ClassDataItem.EncodedMethod method : directMethods) {
+                if (method.codeItem == null || method.codeItem.getInstructions().length == 0) {
+                    continue;
+                }
+                
+                final MethodAnalyzer analyzer = new MethodAnalyzer(method, false);
+                analyzer.analyze();
+                final List<AnalyzedInstruction> instructions = analyzer.getInstructions();
+                gDump.dump(instructions, method.method.getVirtualMethodString());
+            }
+        }
+        
+        ClassDataItem.EncodedMethod[] virtualMethods = classDataItem.getVirtualMethods();
+
+        if (virtualMethods != null) {
+            for (ClassDataItem.EncodedMethod method : virtualMethods) {
+                if (method.codeItem == null || method.codeItem.getInstructions().length == 0) {
+                    continue;
+                }
+                
+                final MethodAnalyzer analyzer = new MethodAnalyzer(method, false);
+                analyzer.analyze();
+                final List<AnalyzedInstruction> instructions = analyzer.getInstructions();
+                gDump.dump(instructions, method.method.getVirtualMethodString());
             }
         }
     }
