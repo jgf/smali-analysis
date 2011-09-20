@@ -28,13 +28,24 @@
 
 package org.jf.dexlib.Code.Analysis;
 
-import org.jf.dexlib.Code.*;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import org.jf.dexlib.Item;
 import org.jf.dexlib.ItemType;
 import org.jf.dexlib.MethodIdItem;
+import org.jf.dexlib.Code.FiveRegisterInstruction;
+import org.jf.dexlib.Code.Instruction;
+import org.jf.dexlib.Code.InstructionWithReference;
+import org.jf.dexlib.Code.Opcode;
+import org.jf.dexlib.Code.RegisterRangeInstruction;
+import org.jf.dexlib.Code.SingleRegisterInstruction;
 import org.jf.dexlib.Util.ExceptionWithContext;
-
-import java.util.*;
+import org.jf.dexlib.Util.MergedIterable;
 
 public class AnalyzedInstruction implements Comparable<AnalyzedInstruction> {
     /**
@@ -48,15 +59,25 @@ public class AnalyzedInstruction implements Comparable<AnalyzedInstruction> {
     protected final int instructionIndex;
 
     /**
-     * Instructions that can pass on execution to this one during normal execution
+     * Instructions that can pass on execution to this one during normal execution and due to exception flow
      */
-    protected final TreeSet<AnalyzedInstruction> predecessors = new TreeSet<AnalyzedInstruction>();
+    private final TreeSet<AnalyzedInstruction> predecessors = new TreeSet<AnalyzedInstruction>();
 
     /**
      * Instructions that can execution could pass on to next during normal execution
      */
-    protected final LinkedList<AnalyzedInstruction> successors = new LinkedList<AnalyzedInstruction>();
+    private final LinkedList<AnalyzedInstruction> normalSuccessors = new LinkedList<AnalyzedInstruction>();
+    
+    /**
+     * Instructions that can execution could pass on to next if an execution occurs
+     */
+    private final LinkedList<AnalyzedInstruction> exceptionSuccessors = new LinkedList<AnalyzedInstruction>();
 
+    /**
+     * Instructions that can execution could pass on to next during normal execution and due to exception flow
+     */
+    private final Iterable<AnalyzedInstruction> successors = new MergedIterable<AnalyzedInstruction>(normalSuccessors, exceptionSuccessors);
+    
     /**
      * This contains the register types *before* the instruction has executed
      */
@@ -110,7 +131,11 @@ public class AnalyzedInstruction implements Comparable<AnalyzedInstruction> {
     }
 
     protected void addSuccessor(AnalyzedInstruction successor) {
-        successors.add(successor);
+        normalSuccessors.add(successor);
+    }
+
+    protected void addExceptionSuccessor(AnalyzedInstruction successor) {
+        exceptionSuccessors.add(successor);
     }
 
     protected void setDeodexedInstruction(Instruction instruction) {
@@ -124,11 +149,39 @@ public class AnalyzedInstruction implements Comparable<AnalyzedInstruction> {
     }
 
     public int getSuccessorCount() {
-        return successors.size();
+        return normalSuccessors.size() + exceptionSuccessors.size();
     }
 
-    public List<AnalyzedInstruction> getSuccesors() {
-        return Collections.unmodifiableList(successors);
+    /**
+     * Returns a list of instructions that may be executed after this instruction.
+     * This list contains successors due to normal execution as well as due to
+     * exception flow. It may contain duplicate entries iff the same instruction
+     * is reached through normal flow as well as exceptional flow. 
+     * Think of empty catch blocks:
+     * <pre>
+     * try {
+     *     foo();
+     * } catch (Throwable t) {}
+     * x = 42;
+     * </pre>
+     * <tt>x = 42</tt> is normal successor of <tt>foo()</tt> as well as it is the
+     * successor case of an exception. So this instruction would be contained
+     * twice in this list. Not that it would be only contained once in 
+     * getExceptionSuccessors().
+     * @return A list of instructions that may be executed after this instruction.
+     */
+    public Iterable<AnalyzedInstruction> getSuccessors() {
+        return successors;
+    }
+
+    /**
+     * Returns a list of instructions that succeed this instruction if an
+     * exception occurred. This method always returns a subset of getSuccessors(). 
+     * @return A list of instructions that succeed this instruction if an
+     * exception occurred.
+     */
+    public List<AnalyzedInstruction> getExceptionSuccessors() {
+        return Collections.unmodifiableList(exceptionSuccessors);
     }
 
     public Instruction getInstruction() {

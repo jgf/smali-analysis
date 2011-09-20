@@ -180,7 +180,7 @@ public class MethodAnalyzer {
         BitSet instructionsToAnalyze = new BitSet(instructions.size());
 
         //make sure all of the "first instructions" are marked for processing
-        for (AnalyzedInstruction successor: startOfMethod.successors) {
+        for (AnalyzedInstruction successor: startOfMethod.getSuccessors()) {
             instructionsToAnalyze.set(successor.instructionIndex);
         }
 
@@ -224,7 +224,7 @@ public class MethodAnalyzer {
 
                     analyzedInstructions.set(instructionToAnalyze.getInstructionIndex());
 
-                    for (AnalyzedInstruction successor: instructionToAnalyze.successors) {
+                    for (AnalyzedInstruction successor: instructionToAnalyze.getSuccessors()) {
                         instructionsToAnalyze.set(successor.getInstructionIndex());
                     }
                 }
@@ -283,7 +283,7 @@ public class MethodAnalyzer {
         BitSet verifiedInstructions = new BitSet(instructions.size());
 
         //make sure all of the "first instructions" are marked for processing
-        for (AnalyzedInstruction successor: startOfMethod.successors) {
+        for (AnalyzedInstruction successor: startOfMethod.getSuccessors()) {
             instructionsToVerify.set(successor.instructionIndex);
         }
 
@@ -308,7 +308,7 @@ public class MethodAnalyzer {
 
                 verifiedInstructions.set(instructionToVerify.getInstructionIndex());
 
-                for (AnalyzedInstruction successor: instructionToVerify.successors) {
+                for (AnalyzedInstruction successor: instructionToVerify.getSuccessors()) {
                     instructionsToVerify.set(successor.getInstructionIndex());
                 }
             }
@@ -440,7 +440,7 @@ public class MethodAnalyzer {
     private void propagateRegisterToSuccessors(AnalyzedInstruction instruction, int registerNumber,
                                                BitSet changedInstructions) {
         RegisterType postRegisterType = instruction.getPostInstructionRegisterType(registerNumber);
-        for (AnalyzedInstruction successor: instruction.successors) {
+        for (AnalyzedInstruction successor: startOfMethod.getSuccessors()) {
             if (successor.mergeRegister(registerNumber, postRegisterType, analyzedInstructions)) {
                 changedInstructions.set(successor.instructionIndex);
             }
@@ -567,9 +567,9 @@ public class MethodAnalyzer {
 
     private void addPredecessorSuccessor(AnalyzedInstruction predecessor, AnalyzedInstruction successor,
                                                 AnalyzedInstruction[][] exceptionHandlers,
-                                                BitSet instructionsToProcess, boolean allowMoveException) {
+                                                BitSet instructionsToProcess, boolean exceptionFlow) {
 
-        if (!allowMoveException && successor.instruction.opcode == Opcode.MOVE_EXCEPTION) {
+        if (!exceptionFlow && successor.instruction.opcode == Opcode.MOVE_EXCEPTION) {
             throw new ValidationException("Execution can pass from the " + predecessor.instruction.opcode.name +
                     " instruction at code address 0x" + Integer.toHexString(getInstructionAddress(predecessor)) +
                     " to the move-exception instruction at address 0x" +
@@ -577,10 +577,19 @@ public class MethodAnalyzer {
         }
 
         if (!successor.addPredecessor(predecessor)) {
-            return;
+            // if the predecessor is already present, we check if we would add some duplicates
+            final boolean isExceptionSuccessor = predecessor.getExceptionSuccessors().contains(successor);
+            if ((exceptionFlow && isExceptionSuccessor) || (!exceptionFlow && !isExceptionSuccessor)) {
+                return;
+            }
         }
 
-        predecessor.addSuccessor(successor);
+        if (exceptionFlow) {
+            predecessor.addExceptionSuccessor(successor);
+        } else {
+            predecessor.addSuccessor(successor);
+        }
+
         instructionsToProcess.set(successor.getInstructionIndex());
 
 
