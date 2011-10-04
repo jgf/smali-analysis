@@ -28,18 +28,26 @@
 
 package org.jf.dexlib.Code.Analysis;
 
-import org.jf.dexlib.*;
-import org.jf.dexlib.Util.AccessFlags;
-import org.jf.dexlib.Util.ExceptionWithContext;
-import org.jf.dexlib.Util.SparseArray;
-
 import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.jf.dexlib.ClassDataItem.EncodedField;
-import static org.jf.dexlib.ClassDataItem.EncodedMethod;
+import org.jf.dexlib.ClassDataItem;
+import org.jf.dexlib.ClassDataItem.EncodedField;
+import org.jf.dexlib.ClassDataItem.EncodedMethod;
+import org.jf.dexlib.ClassDefItem;
+import org.jf.dexlib.DexFile;
+import org.jf.dexlib.OdexDependencies;
+import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.TypeListItem;
+import org.jf.dexlib.Util.AccessFlags;
+import org.jf.dexlib.Util.ExceptionWithContext;
+import org.jf.dexlib.Util.SparseArray;
 
 public class ClassPath {
     private static ClassPath theClassPath = null;

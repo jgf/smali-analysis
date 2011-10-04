@@ -28,11 +28,11 @@
 
 package org.jf.dexlib.Code.Format;
 
+import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Instruction;
 import org.jf.dexlib.Code.OdexedInvokeVirtual;
 import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Code.RegisterRangeInstruction;
-import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.NumberUtils;
 

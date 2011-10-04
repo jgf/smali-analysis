@@ -28,9 +28,11 @@
 
 package org.jf.dexlib;
 
-import org.jf.dexlib.Util.*;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -40,6 +42,14 @@ import java.util.Comparator;
 import java.util.zip.Adler32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import org.jf.dexlib.Util.AlignmentUtils;
+import org.jf.dexlib.Util.AnnotatedOutput;
+import org.jf.dexlib.Util.ByteArrayInput;
+import org.jf.dexlib.Util.ExceptionWithContext;
+import org.jf.dexlib.Util.FileUtils;
+import org.jf.dexlib.Util.Hex;
+import org.jf.dexlib.Util.Input;
 
 /**
  * <h3>Main use cases</h3>

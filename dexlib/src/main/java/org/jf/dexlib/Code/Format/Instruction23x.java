@@ -28,10 +28,10 @@
 
 package org.jf.dexlib.Code.Format;
 
+import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Instruction;
 import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Code.ThreeRegisterInstruction;
-import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Util.AnnotatedOutput;
 
 public class Instruction23x extends Instruction implements ThreeRegisterInstruction {

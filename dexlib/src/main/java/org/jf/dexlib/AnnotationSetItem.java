@@ -28,12 +28,12 @@
 
 package org.jf.dexlib;
 
-import org.jf.dexlib.Util.AnnotatedOutput;
-import org.jf.dexlib.Util.Input;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+
+import org.jf.dexlib.Util.AnnotatedOutput;
+import org.jf.dexlib.Util.Input;
 
 public class AnnotationSetItem extends Item<AnnotationSetItem> {
     private int hashCode = 0;

@@ -28,13 +28,18 @@
 
 package org.jf.dexlib.Code.Analysis;
 
-import org.jf.dexlib.*;
-import org.jf.dexlib.Code.Format.Instruction22c;
+import java.util.HashMap;
+
+import org.jf.dexlib.ClassDataItem;
+import org.jf.dexlib.ClassDefItem;
+import org.jf.dexlib.DexFile;
+import org.jf.dexlib.FieldIdItem;
+import org.jf.dexlib.Item;
+import org.jf.dexlib.MethodIdItem;
 import org.jf.dexlib.Code.Instruction;
 import org.jf.dexlib.Code.InstructionWithReference;
+import org.jf.dexlib.Code.Format.Instruction22c;
 import org.jf.dexlib.Util.AccessFlags;
-
-import java.util.HashMap;
 
 public class SyntheticAccessorResolver {
     public static final int METHOD = 0;

@@ -28,11 +28,11 @@
 
 package org.jf.dexlib.Code;
 
+import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Format.ArrayDataPseudoInstruction;
 import org.jf.dexlib.Code.Format.Instruction10x;
 import org.jf.dexlib.Code.Format.PackedSwitchDataPseudoInstruction;
 import org.jf.dexlib.Code.Format.SparseSwitchDataPseudoInstruction;
-import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Util.ExceptionWithContext;
 import org.jf.dexlib.Util.Hex;
 

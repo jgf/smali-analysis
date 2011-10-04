@@ -28,7 +28,12 @@
 
 package org.jf.dexlib.Code;
 
-import org.jf.dexlib.*;
+import org.jf.dexlib.DexFile;
+import org.jf.dexlib.FieldIdItem;
+import org.jf.dexlib.Item;
+import org.jf.dexlib.MethodIdItem;
+import org.jf.dexlib.StringIdItem;
+import org.jf.dexlib.TypeIdItem;
 import org.jf.dexlib.Util.NumberUtils;
 
 public abstract class InstructionWithReference extends Instruction {

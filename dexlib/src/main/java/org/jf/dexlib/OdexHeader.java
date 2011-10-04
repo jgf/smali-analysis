@@ -28,9 +28,9 @@
 
 package org.jf.dexlib;
 
-import org.jf.dexlib.Util.Input;
-
 import java.util.Arrays;
+
+import org.jf.dexlib.Util.Input;
 
 public class OdexHeader {
 

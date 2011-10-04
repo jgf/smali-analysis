@@ -28,10 +28,14 @@
 
 package org.jf.dexlib;
 
-import org.jf.dexlib.Util.*;
-
 import java.util.Collections;
 import java.util.List;
+
+import org.jf.dexlib.Util.AccessFlags;
+import org.jf.dexlib.Util.AnnotatedOutput;
+import org.jf.dexlib.Util.ExceptionWithContext;
+import org.jf.dexlib.Util.Input;
+import org.jf.dexlib.Util.Leb128Utils;
 
 public class ClassDataItem extends Item<ClassDataItem> {
     private EncodedField[] staticFields;

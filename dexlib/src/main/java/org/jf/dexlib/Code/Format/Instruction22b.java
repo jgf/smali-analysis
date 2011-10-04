@@ -28,11 +28,11 @@
 
 package org.jf.dexlib.Code.Format;
 
+import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Instruction;
 import org.jf.dexlib.Code.LiteralInstruction;
 import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Code.TwoRegisterInstruction;
-import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Util.AnnotatedOutput;
 
 public class Instruction22b extends Instruction implements TwoRegisterInstruction, LiteralInstruction {

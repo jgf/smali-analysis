@@ -28,12 +28,12 @@
 
 package org.jf.dexlib;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.ExceptionWithContext;
 import org.jf.dexlib.Util.Input;
-
-import java.util.Collections;
-import java.util.List;
 
 public class AnnotationDirectoryItem extends Item<AnnotationDirectoryItem> {
     private AnnotationSetItem classAnnotations;

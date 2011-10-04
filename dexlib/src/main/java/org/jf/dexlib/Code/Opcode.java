@@ -28,9 +28,9 @@
 
 package org.jf.dexlib.Code;
 
-import org.jf.dexlib.Code.Format.Format;
-
 import java.util.HashMap;
+
+import org.jf.dexlib.Code.Format.Format;
 
 public enum Opcode
 {

@@ -28,8 +28,8 @@
 
 package org.jf.dexlib.Code;
 
-import org.jf.dexlib.Code.Format.Format;
 import org.jf.dexlib.DexFile;
+import org.jf.dexlib.Code.Format.Format;
 import org.jf.dexlib.Util.AnnotatedOutput;
 
 public abstract class Instruction {

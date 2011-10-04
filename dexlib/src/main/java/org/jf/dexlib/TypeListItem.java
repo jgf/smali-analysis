@@ -28,11 +28,11 @@
 
 package org.jf.dexlib;
 
+import java.util.List;
+
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.Input;
 import org.jf.dexlib.Util.ReadOnlyArrayList;
-
-import java.util.List;
 
 public class TypeListItem extends Item<TypeListItem> {
     private int hashCode = 0;

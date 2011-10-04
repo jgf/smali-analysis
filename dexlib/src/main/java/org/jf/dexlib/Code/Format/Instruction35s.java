@@ -28,18 +28,21 @@
 
 package org.jf.dexlib.Code.Format;
 
-import org.jf.dexlib.Code.FiveRegisterInstruction;
-import org.jf.dexlib.Code.Instruction;
-import org.jf.dexlib.Code.InstructionWithReference;
-import org.jf.dexlib.Code.Opcode;
+import static org.jf.dexlib.Code.Opcode.FILLED_NEW_ARRAY;
+import static org.jf.dexlib.Code.Opcode.INVOKE_INTERFACE;
+import static org.jf.dexlib.Code.Opcode.INVOKE_STATIC;
+import static org.jf.dexlib.Code.Opcode.INVOKE_VIRTUAL;
+
 import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Item;
 import org.jf.dexlib.MethodIdItem;
 import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.Code.FiveRegisterInstruction;
+import org.jf.dexlib.Code.Instruction;
+import org.jf.dexlib.Code.InstructionWithReference;
+import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.NumberUtils;
-
-import static org.jf.dexlib.Code.Opcode.*;
 
 public class Instruction35s extends InstructionWithReference implements FiveRegisterInstruction {
     public static final Instruction.InstructionFactory Factory = new Factory();

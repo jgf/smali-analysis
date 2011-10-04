@@ -28,16 +28,43 @@
 
 package org.jf.dexlib.Code.Analysis;
 
-import org.jf.dexlib.*;
-import org.jf.dexlib.Code.*;
-import org.jf.dexlib.Code.Format.*;
-import org.jf.dexlib.Util.AccessFlags;
-import org.jf.dexlib.Util.ExceptionWithContext;
-import org.jf.dexlib.Util.SparseArray;
-
 import java.util.BitSet;
 import java.util.EnumSet;
 import java.util.List;
+
+import org.jf.dexlib.ClassDataItem;
+import org.jf.dexlib.CodeItem;
+import org.jf.dexlib.FieldIdItem;
+import org.jf.dexlib.Item;
+import org.jf.dexlib.ItemType;
+import org.jf.dexlib.MethodIdItem;
+import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.TypeListItem;
+import org.jf.dexlib.Code.FiveRegisterInstruction;
+import org.jf.dexlib.Code.Instruction;
+import org.jf.dexlib.Code.InstructionWithReference;
+import org.jf.dexlib.Code.LiteralInstruction;
+import org.jf.dexlib.Code.MultiOffsetInstruction;
+import org.jf.dexlib.Code.OffsetInstruction;
+import org.jf.dexlib.Code.Opcode;
+import org.jf.dexlib.Code.RegisterRangeInstruction;
+import org.jf.dexlib.Code.SingleRegisterInstruction;
+import org.jf.dexlib.Code.ThreeRegisterInstruction;
+import org.jf.dexlib.Code.TwoRegisterInstruction;
+import org.jf.dexlib.Code.Format.ArrayDataPseudoInstruction;
+import org.jf.dexlib.Code.Format.Format;
+import org.jf.dexlib.Code.Format.Instruction21c;
+import org.jf.dexlib.Code.Format.Instruction22c;
+import org.jf.dexlib.Code.Format.Instruction22cs;
+import org.jf.dexlib.Code.Format.Instruction35c;
+import org.jf.dexlib.Code.Format.Instruction35ms;
+import org.jf.dexlib.Code.Format.Instruction35s;
+import org.jf.dexlib.Code.Format.Instruction3rc;
+import org.jf.dexlib.Code.Format.Instruction3rms;
+import org.jf.dexlib.Code.Format.UnresolvedOdexInstruction;
+import org.jf.dexlib.Util.AccessFlags;
+import org.jf.dexlib.Util.ExceptionWithContext;
+import org.jf.dexlib.Util.SparseArray;
 
 /**
  * The MethodAnalyzer performs several functions. It "analyzes" the instructions and infers the register types

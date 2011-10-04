@@ -28,15 +28,15 @@
 
 package org.jf.dexlib;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jf.dexlib.Debug.DebugInstructionIterator;
 import org.jf.dexlib.Debug.DebugOpcode;
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.ByteArrayInput;
 import org.jf.dexlib.Util.Input;
 import org.jf.dexlib.Util.Leb128Utils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class DebugInfoItem extends Item<DebugInfoItem> {
     private int lineStart;

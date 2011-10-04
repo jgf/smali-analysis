@@ -28,14 +28,14 @@
 
 package org.jf.dexlib.Code.Format;
 
+import java.util.Iterator;
+
+import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Instruction;
 import org.jf.dexlib.Code.MultiOffsetInstruction;
 import org.jf.dexlib.Code.Opcode;
-import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.NumberUtils;
-
-import java.util.Iterator;
 
 public class SparseSwitchDataPseudoInstruction extends Instruction implements MultiOffsetInstruction {
     public static final Instruction.InstructionFactory Factory = new Factory();

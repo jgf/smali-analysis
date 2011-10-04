@@ -28,13 +28,12 @@
 
 package org.jf.dexlib.Code.Analysis;
 
-import org.jf.dexlib.TypeIdItem;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
 
-import static org.jf.dexlib.Code.Analysis.ClassPath.ClassDef;
+import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.Code.Analysis.ClassPath.ClassDef;
 
 public class RegisterType {
     private final static HashMap<RegisterType, RegisterType> internedRegisterTypes =

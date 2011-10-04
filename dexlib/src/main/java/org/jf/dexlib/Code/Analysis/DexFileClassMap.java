@@ -28,11 +28,11 @@
 
 package org.jf.dexlib.Code.Analysis;
 
+import java.util.HashMap;
+
 import org.jf.dexlib.ClassDefItem;
 import org.jf.dexlib.DexFile;
 import org.jf.dexlib.TypeIdItem;
-
-import java.util.HashMap;
 
 /**
  * Keeps a simple map of classes defined in a dex file, allowing you to look them up by TypeIdItem or name

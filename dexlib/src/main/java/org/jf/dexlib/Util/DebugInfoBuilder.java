@@ -28,10 +28,14 @@
 
 package org.jf.dexlib.Util;
 
-import org.jf.dexlib.*;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jf.dexlib.DebugInfoItem;
+import org.jf.dexlib.DexFile;
+import org.jf.dexlib.Item;
+import org.jf.dexlib.StringIdItem;
+import org.jf.dexlib.TypeIdItem;
 
 /**
  * This class is intended to provide an easy to use container to build up a method's debug info. You can easily add

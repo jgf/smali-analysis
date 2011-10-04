@@ -28,14 +28,13 @@
 
 package org.jf.dexlib.Code.Analysis;
 
-import org.jf.dexlib.Code.Format.Instruction35ms;
-import org.jf.dexlib.Code.Format.Instruction3rms;
-import org.jf.dexlib.Code.OdexedInvokeVirtual;
-import org.jf.dexlib.MethodIdItem;
-
+import static org.jf.dexlib.Code.Analysis.DeodexUtil.Direct;
 import static org.jf.dexlib.Code.Analysis.DeodexUtil.Static;
 import static org.jf.dexlib.Code.Analysis.DeodexUtil.Virtual;
-import static org.jf.dexlib.Code.Analysis.DeodexUtil.Direct;
+
+import org.jf.dexlib.Code.OdexedInvokeVirtual;
+import org.jf.dexlib.Code.Format.Instruction35ms;
+import org.jf.dexlib.Code.Format.Instruction3rms;
 
 abstract class InlineMethodResolver {
     public static InlineMethodResolver createInlineMethodResolver(DeodexUtil deodexUtil, int odexVersion) {

@@ -28,12 +28,19 @@
 
 package org.jf.dexlib.Code.Analysis;
 
-import org.jf.dexlib.*;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jf.dexlib.DexFile;
+import org.jf.dexlib.FieldIdItem;
+import org.jf.dexlib.MethodIdItem;
+import org.jf.dexlib.OdexHeader;
+import org.jf.dexlib.ProtoIdItem;
+import org.jf.dexlib.StringIdItem;
+import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.TypeListItem;
 
 public class DeodexUtil {
     public static final int Virtual = 0;

@@ -29,7 +29,16 @@
 package org.jf.dexlib.Util;
 
 import org.jf.dexlib.DexFile;
-import org.jf.dexlib.EncodedValue.*;
+import org.jf.dexlib.EncodedValue.BooleanEncodedValue;
+import org.jf.dexlib.EncodedValue.ByteEncodedValue;
+import org.jf.dexlib.EncodedValue.CharEncodedValue;
+import org.jf.dexlib.EncodedValue.DoubleEncodedValue;
+import org.jf.dexlib.EncodedValue.EncodedValue;
+import org.jf.dexlib.EncodedValue.FloatEncodedValue;
+import org.jf.dexlib.EncodedValue.IntEncodedValue;
+import org.jf.dexlib.EncodedValue.LongEncodedValue;
+import org.jf.dexlib.EncodedValue.NullEncodedValue;
+import org.jf.dexlib.EncodedValue.ShortEncodedValue;
 
 public class TypeUtils
 {

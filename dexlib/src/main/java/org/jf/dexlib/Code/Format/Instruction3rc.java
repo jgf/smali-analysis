@@ -28,18 +28,21 @@
 
 package org.jf.dexlib.Code.Format;
 
-import org.jf.dexlib.Code.Instruction;
-import org.jf.dexlib.Code.InstructionWithReference;
-import org.jf.dexlib.Code.Opcode;
-import org.jf.dexlib.Code.RegisterRangeInstruction;
+import static org.jf.dexlib.Code.Opcode.FILLED_NEW_ARRAY_RANGE;
+import static org.jf.dexlib.Code.Opcode.INVOKE_INTERFACE_RANGE;
+import static org.jf.dexlib.Code.Opcode.INVOKE_STATIC_RANGE;
+import static org.jf.dexlib.Code.Opcode.INVOKE_VIRTUAL_RANGE;
+
 import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Item;
 import org.jf.dexlib.MethodIdItem;
 import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.Code.Instruction;
+import org.jf.dexlib.Code.InstructionWithReference;
+import org.jf.dexlib.Code.Opcode;
+import org.jf.dexlib.Code.RegisterRangeInstruction;
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.NumberUtils;
-
-import static org.jf.dexlib.Code.Opcode.*;
 
 public class Instruction3rc extends InstructionWithReference implements RegisterRangeInstruction {
     public static final Instruction.InstructionFactory Factory = new Factory();
