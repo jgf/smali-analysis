@@ -107,6 +107,7 @@ public class main {
         boolean deodex = false;
         boolean verify = false;
         boolean ignoreErrors = false;
+        boolean dumpWALA = false;   // dump WALA instructions
         boolean graphCFG = false;   // dump control flow graphs
         boolean graphCDG = false;   // dump control dependence graphs
         boolean graphDOM = false;   // dump dominator trees
@@ -192,6 +193,8 @@ public class main {
                                 graphCFG = true;
                             } else if (value.equalsIgnoreCase("DOM")) {
                                 graphDOM = true;
+                            } else if (value.equalsIgnoreCase("WALA")) {
+                                dumpWALA = true;
                             } else if (value.equalsIgnoreCase("CDG")) {
                                 graphCDG = true;
                             } else if (value.equalsIgnoreCase("EXC")) {
@@ -341,7 +344,7 @@ public class main {
                         bootClassPathDirsArray, bootClassPath, extraBootClassPathEntries.toString(),
                         noParameterRegisters, useLocalsDirective, useSequentialLabels, outputDebugInfo, addCodeOffsets,
                         noAccessorComments, registerInfo, verify, ignoreErrors, 
-                        graphCFG, graphDOM, graphCDG, graphIncludeExceptions, outputGraphDir);
+                        dumpWALA, graphCFG, graphDOM, graphCDG, graphIncludeExceptions, outputGraphDir);
             }
 
             if ((doDump || write) && !dexFile.isOdex()) {

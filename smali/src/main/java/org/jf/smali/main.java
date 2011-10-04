@@ -366,7 +366,7 @@ public class main {
                     }
                     
                     String filePrefix = graphPrefixFile.toString();
-                    GraphDumper gd = new GraphDumper(filePrefix, graphCFG, graphDOM, graphCDG, graphIncludeExceptions);
+                    GraphDumper gd = new GraphDumper(filePrefix, false, graphCFG, graphDOM, graphCDG, graphIncludeExceptions);
                     
                     if (clsData.getDirectMethods() != null) {
                         for (EncodedMethod em : clsData.getDirectMethods()) {

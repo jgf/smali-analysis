@@ -72,7 +72,7 @@ public class baksmali {
         disassembleDexFile(dexFilePath, dexFile, deodex, outputDirectory, classPathDirs, bootClassPath, 
                 extraBootClassPath, noParameterRegisters, useLocalsDirective, useSequentialLabels, 
                 outputDebugInfo, addCodeOffsets, noAccessorComments, registerInfo, verify, ignoreErrors,
-                false, false, false, false, null);
+                false, false, false, false, false, null);
     }
     
     public static void disassembleDexFile(String dexFilePath, DexFile dexFile, boolean deodex, String outputDirectory,
@@ -80,7 +80,7 @@ public class baksmali {
                                           boolean noParameterRegisters, boolean useLocalsDirective,
                                           boolean useSequentialLabels, boolean outputDebugInfo, boolean addCodeOffsets,
                                           boolean noAccessorComments, int registerInfo, boolean verify, boolean ignoreErrors,
-                                          boolean graphCFG, boolean graphDOM, boolean graphCDG, boolean graphIncludeExc,
+                                          boolean dumpWALA, boolean graphCFG, boolean graphDOM, boolean graphCDG, boolean graphIncludeExc,
                                           String outputGraphDir)
     {
         baksmali.noParameterRegisters = noParameterRegisters;
@@ -93,7 +93,7 @@ public class baksmali {
         baksmali.registerInfo = registerInfo;
         baksmali.bootClassPath = bootClassPath;
         baksmali.verify = verify;
-        baksmali.dumpGraph = graphCDG || graphCFG || graphDOM;
+        baksmali.dumpGraph = graphCDG || graphCFG || graphDOM || dumpWALA;
 
         ClassPath.ClassPathErrorHandler classPathErrorHandler = null;
         if (ignoreErrors) {
@@ -251,7 +251,7 @@ public class baksmali {
 
                     if (!skip) {
                         String filePrefix = graphFilePrefix.toString();
-                        GraphDumper gDump = new GraphDumper(filePrefix, graphCFG, graphDOM, graphCDG, graphIncludeExc);
+                        GraphDumper gDump = new GraphDumper(filePrefix, dumpWALA, graphCFG, graphDOM, graphCDG, graphIncludeExc);
                         classDefinition.dumpGraphs(gDump);
                     }
                 }
