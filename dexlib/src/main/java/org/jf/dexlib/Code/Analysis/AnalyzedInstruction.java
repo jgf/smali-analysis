@@ -44,6 +44,8 @@ import org.jf.dexlib.Code.InstructionWithReference;
 import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Code.RegisterRangeInstruction;
 import org.jf.dexlib.Code.SingleRegisterInstruction;
+import org.jf.dexlib.Code.ThreeRegisterInstruction;
+import org.jf.dexlib.Code.TwoRegisterInstruction;
 import org.jf.dexlib.Util.ExceptionWithContext;
 import org.jf.dexlib.Util.MergedIterable;
 
@@ -370,6 +372,46 @@ public class AnalyzedInstruction implements Comparable<AnalyzedInstruction> {
                     "store a value");
         }
         return ((SingleRegisterInstruction)instruction).getRegisterA();
+    }
+
+    public int getParameterRegister(final int paramNum) {
+        if (paramNum < 0 || paramNum > 2) {
+            throw new ExceptionWithContext("Bytecode instructions can only have between 0 and 3 params. So only " 
+                    + "indices between 0 and 2 are allowed.");
+        }
+
+        int registerNum = -1;
+
+        switch (paramNum) {
+        case 1: {
+            if (this instanceof SingleRegisterInstruction) {
+                SingleRegisterInstruction sri = (SingleRegisterInstruction) this;
+                registerNum = sri.getRegisterA();
+            } else {
+                throw new ExceptionWithContext(this.instruction.opcode.name + " has no parameter no. " + paramNum);
+            }
+        } break;
+        case 2: {
+            if (this instanceof TwoRegisterInstruction) {
+                TwoRegisterInstruction tri = (TwoRegisterInstruction) this;
+                registerNum = tri.getRegisterB();
+            } else {
+                throw new ExceptionWithContext(this.instruction.opcode.name
+                        + " has no parameter no. " + paramNum);
+            }
+        } break;
+        case 3: {
+            if (this instanceof ThreeRegisterInstruction) {
+                ThreeRegisterInstruction tri = (ThreeRegisterInstruction) this;
+                registerNum = tri.getRegisterC();
+            } else {
+                throw new ExceptionWithContext(this.instruction.opcode.name
+                        + " has no parameter no. " + paramNum);
+            }
+        } break;
+        }
+
+        return registerNum;
     }
 
     public int getRegisterCount() {
