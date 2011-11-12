@@ -3,29 +3,39 @@ package org.jf.dexlib.Code.Analysis.wala;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jf.dexlib.FieldIdItem;
+import org.jf.dexlib.StringIdItem;
+import org.jf.dexlib.TypeIdItem;
+import org.jf.dexlib.Code.InstructionWithReference;
+import org.jf.dexlib.Code.LiteralInstruction;
 import org.jf.dexlib.Code.Analysis.AnalyzedInstruction;
 
 import com.ibm.wala.classLoader.JavaLanguage.JavaInstructionFactory;
-import com.ibm.wala.fixpoint.UnaryOperator;
 import com.ibm.wala.shrikeBT.IBinaryOpInstruction;
 import com.ibm.wala.shrikeBT.IComparisonInstruction;
 import com.ibm.wala.shrikeBT.IConditionalBranchInstruction;
+import com.ibm.wala.shrikeBT.IShiftInstruction;
 import com.ibm.wala.shrikeBT.IUnaryOpInstruction;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSAInstructionFactory;
+import com.ibm.wala.ssa.SymbolTable;
+import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.util.strings.Atom;
 
 public class Dex2Wala {
 
 	private List<SSAInstruction> instructions;
+	private SymbolTable symbols;
 	
 	private Dex2Wala() {
 		instructions = new LinkedList<SSAInstruction>();
+		symbols = new SymbolTable(12);
 	}
 	
 	public static List<SSAInstruction> build(final List<AnalyzedInstruction> instructions, final String name) {
-		System.out.println(name);
+		System.out.println("Dex2Wala: " + name);
 		Dex2Wala dex2wala = new Dex2Wala();
 		dex2wala.run(instructions, name);
 		
@@ -40,6 +50,7 @@ public class Dex2Wala {
 		final SSAInstructionFactory ssa = new JavaInstructionFactory();
 		
 		for(AnalyzedInstruction inst : instructions) {
+			System.out.println(inst.getInstruction().opcode);
 			switch (inst.getInstruction().opcode) {
 			case ADD_DOUBLE:
 			case ADD_DOUBLE_2ADDR:
@@ -106,16 +117,25 @@ public class Dex2Wala {
 				break;
 			case CONST:
 			case CONST_16:
-			case CONST_4:
-			case CONST_CLASS:
 			case CONST_HIGH16:
-			case CONST_STRING:
-			case CONST_STRING_JUMBO:
+			case CONST_4:
 			case CONST_WIDE:
 			case CONST_WIDE_16:
 			case CONST_WIDE_32:
 			case CONST_WIDE_HIGH16:
-				System.out.println("Was ist CONST?");
+				long l = ((LiteralInstruction) inst.getInstruction()).getLiteral();
+				symbols.getConstant(l);
+				break;
+			case CONST_CLASS:
+				TypeIdItem i = (TypeIdItem) ((InstructionWithReference) inst.getInstruction()).getReferencedItem();
+				String s = i.getTypeDescriptor();
+				symbols.getConstant(s);
+				break;
+			case CONST_STRING:
+			case CONST_STRING_JUMBO:
+				StringIdItem it = (StringIdItem) ((InstructionWithReference) inst.getInstruction()).getReferencedItem();
+				String st = it.getStringValue();
+				symbols.getConstant(st);
 				break;
 			case DIV_DOUBLE:
 			case DIV_DOUBLE_2ADDR:
@@ -174,50 +194,58 @@ public class Dex2Wala {
 			case IF_EQ:
 			case IF_EQZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.EQ,
-						null, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
+						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
 			case IF_GE:
 			case IF_GEZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.GE,
-						null, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
+						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
 			case IF_GT:
 			case IF_GTZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.GT,
-						null, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
+						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
 			case IF_LE:
 			case IF_LEZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.LE,
-						null, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
+						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
 			case IF_LT:
 			case IF_LTZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.LT,
-						null, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
+						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
 			case IF_NE:
 			case IF_NEZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.NE,
-						null, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
+						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
 			case IGET:
 			case IGET_BOOLEAN:
 			case IGET_BYTE:
 			case IGET_CHAR:
 			case IGET_OBJECT:
-			case IGET_OBJECT_QUICK:
-			case IGET_OBJECT_VOLATILE:
-			case IGET_QUICK:
 			case IGET_SHORT:
-			case IGET_VOLATILE:
 			case IGET_WIDE:
-			case IGET_WIDE_QUICK:
+			case IGET_VOLATILE:
+			case IGET_OBJECT_VOLATILE:
 			case IGET_WIDE_VOLATILE:
-				this.instructions.add(ssa.GetInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0),inst.getParameterRegister(1), null)); //Reihenfolge Referenz
+				FieldIdItem fi = (FieldIdItem) ((InstructionWithReference) inst.getInstruction()).getReferencedItem();
+				TypeReference trc = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getContainingClass().getTypeDescriptor());
+				TypeReference trf = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getFieldType().getTypeDescriptor());
+				FieldReference fr = FieldReference.findOrCreate(trc, Atom.findOrCreateAsciiAtom(fi.getFieldName().getStringValue()), trf);
+				this.instructions.add(ssa.GetInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0),inst.getParameterRegister(1), fr)); //Reihenfolge Referenz
+				break;
+			case IGET_OBJECT_QUICK:
+			case IGET_QUICK:
+			case IGET_WIDE_QUICK:
+				System.out.println("IGET_QUICK - FieldOffset?");
 				break;
 			case INSTANCE_OF:
-				this.instructions.add(ssa.InstanceofInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0),inst.getParameterRegister(1), TypeReference.Unknown));  //Reihenfolge TypRef
+				TypeIdItem ti = (TypeIdItem) ((InstructionWithReference) inst.getInstruction()).getReferencedItem();
+				TypeReference tr = TypeReference.findOrCreate(ClassLoaderReference.Application, ti.getTypeDescriptor());
+				this.instructions.add(ssa.InstanceofInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0),inst.getParameterRegister(1), tr));  //Reihenfolge TypRef
 				break;
 			case INT_TO_BYTE:
 				this.instructions.add(ssa.ConversionInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0),
@@ -376,9 +404,11 @@ public class Dex2Wala {
 				break;
 			case RETURN:
 			case RETURN_OBJECT:
-			case RETURN_VOID:
 			case RETURN_WIDE:
 				this.instructions.add(ssa.ReturnInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0), false));
+				break;
+			case RETURN_VOID:
+				this.instructions.add(ssa.ReturnInstruction(inst.getInstructionIndex()));
 				break;
 			case RSUB_INT:
 			case RSUB_INT_LIT8:
@@ -389,12 +419,22 @@ public class Dex2Wala {
 			case SGET_BYTE:
 			case SGET_CHAR:
 			case SGET_OBJECT:
-			case SGET_OBJECT_VOLATILE:
 			case SGET_SHORT:
-			case SGET_VOLATILE:
 			case SGET_WIDE:
+			case SGET_VOLATILE:
 			case SGET_WIDE_VOLATILE:
-				this.instructions.add(ssa.GetInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0), inst.getParameterRegister(1), null)); //Reihenfolge Fieldref
+				fi = (FieldIdItem) ((InstructionWithReference) inst.getInstruction()).getReferencedItem();
+				trc = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getContainingClass().getTypeDescriptor());
+				trf = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getFieldType().getTypeDescriptor());
+				fr = FieldReference.findOrCreate(trc, Atom.findOrCreateAsciiAtom(fi.getFieldName().getStringValue()), trf);
+				this.instructions.add(ssa.GetInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0), fr)); //Fieldref
+				break;
+			case SGET_OBJECT_VOLATILE:
+				fi = (FieldIdItem) ((InstructionWithReference) inst.getInstruction()).getReferencedItem();
+				trc = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getContainingClass().getTypeDescriptor());
+				trf = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getFieldType().getTypeDescriptor());
+				fr = FieldReference.findOrCreate(trc, Atom.findOrCreateAsciiAtom(fi.getFieldName().getStringValue()), trf);
+				this.instructions.add(ssa.GetInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0), inst.getParameterRegister(1), fr)); //Reihenfolge Fieldref
 				break;
 			case SHL_INT:
 			case SHL_INT_2ADDR:

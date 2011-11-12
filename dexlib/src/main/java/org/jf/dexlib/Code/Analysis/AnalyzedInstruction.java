@@ -381,28 +381,29 @@ public class AnalyzedInstruction implements Comparable<AnalyzedInstruction> {
         }
 
         int registerNum = -1;
+        int paramNum_1 = paramNum + 1;
 
-        switch (paramNum) {
-        case 0: {
-            if (this instanceof SingleRegisterInstruction) {
-                SingleRegisterInstruction sri = (SingleRegisterInstruction) this;
+        switch (paramNum_1) {
+        case 1: {
+            if (this.instruction instanceof SingleRegisterInstruction) {
+                SingleRegisterInstruction sri = (SingleRegisterInstruction) this.instruction;
                 registerNum = sri.getRegisterA();
             } else {
                 throw new ExceptionWithContext(this.instruction.opcode.name + " has no parameter no. " + paramNum);
             }
         } break;
-        case 1: {
-            if (this instanceof TwoRegisterInstruction) {
-                TwoRegisterInstruction tri = (TwoRegisterInstruction) this;
+        case 2: {
+            if (this.instruction instanceof TwoRegisterInstruction) {
+                TwoRegisterInstruction tri = (TwoRegisterInstruction) this.instruction;
                 registerNum = tri.getRegisterB();
             } else {
                 throw new ExceptionWithContext(this.instruction.opcode.name
                         + " has no parameter no. " + paramNum);
             }
         } break;
-        case 2: {
-            if (this instanceof ThreeRegisterInstruction) {
-                ThreeRegisterInstruction tri = (ThreeRegisterInstruction) this;
+        case 3: {
+            if (this.instruction instanceof ThreeRegisterInstruction) {
+                ThreeRegisterInstruction tri = (ThreeRegisterInstruction) this.instruction;
                 registerNum = tri.getRegisterC();
             } else {
                 throw new ExceptionWithContext(this.instruction.opcode.name
