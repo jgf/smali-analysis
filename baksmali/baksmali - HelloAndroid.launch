@@ -6,9 +6,12 @@
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="1"/>
 </listAttribute>
+<mapAttribute key="org.eclipse.debug.core.preferred_launchers">
+<mapEntry key="[debug]" value="org.eclipse.jdt.launching.localJavaApplication"/>
+</mapAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.maven.ide.eclipse.launchconfig.classpathProvider"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="org.jf.baksmali.main"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-c ../libandroid/core.jar:../libandroid/framework.jar:../libandroid/ext.jar:../libandroid/android.policy.jar:../libandroid/core-junit.jar -g CFG,EXC=./out /Users/jgf/Documents/workspaces/3.6/workspace-dalvik2wala/HelloAndroid/bin/classes.dex"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-c ../libandroid/core.jar:../libandroid/framework.jar:../libandroid/ext.jar:../libandroid/android.policy.jar:../libandroid/core-junit.jar -g WALA,CFG,EXC=./out ../../ATest/bin/classes.dex"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="baksmali"/>
 <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.maven.ide.eclipse.launchconfig.sourcepathProvider"/>
 </launchConfiguration>
