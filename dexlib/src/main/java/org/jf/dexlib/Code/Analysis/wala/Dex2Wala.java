@@ -72,21 +72,30 @@ public class Dex2Wala {
 			System.out.println(inst.getInstruction().opcode);
 			switch (inst.getInstruction().opcode) {
 			case ADD_DOUBLE:
-			case ADD_DOUBLE_2ADDR:
 			case ADD_FLOAT:
-			case ADD_FLOAT_2ADDR:
 				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.ADD, false, false,
 						inst.getParameterRegister(0), inst.getParameterRegister(1), inst.getParameterRegister(2), false)); //Reihenfolge der Parameter
 				break;
+			case ADD_FLOAT_2ADDR:
+			case ADD_DOUBLE_2ADDR:
+				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.ADD, false, false,
+						inst.getParameterRegister(0), inst.getParameterRegister(1), inst.getParameterRegister(0), false)); //Reihenfolge der Parameter
+				break;
 			case ADD_INT:
-			case ADD_INT_2ADDR:
-			case ADD_INT_LIT16:
-			case ADD_INT_LIT8:
 			case ADD_LONG:
-			case ADD_LONG_2ADDR:
 				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.ADD, false, false,
 						inst.getParameterRegister(0), inst.getParameterRegister(1), inst.getParameterRegister(2), true)); //Reihenfolge der Parameter
-
+				break;
+			case ADD_INT_LIT16:
+			case ADD_INT_LIT8:
+				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.ADD, false, false,
+						inst.getParameterRegister(0), inst.getParameterRegister(1), symbols.getConstant(((LiteralInstruction) inst.getInstruction()).getLiteral()), true)); //Literal
+				break;
+			case ADD_INT_2ADDR:
+			case ADD_LONG_2ADDR:
+				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.ADD, false, false,
+						inst.getParameterRegister(0), inst.getParameterRegister(1), inst.getParameterRegister(0), true)); //Reihenfolge der Parameter
+				break;
 			case AGET_BOOLEAN:
 				this.instructions.add(ssa.ArrayLoadInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0),
 						inst.getParameterRegister(1), inst.getParameterRegister(2), TypeReference.Boolean));
@@ -106,13 +115,19 @@ public class Dex2Wala {
 						inst.getParameterRegister(1), inst.getParameterRegister(2), TypeReference.JavaLangObject)); //Declared Type?
 				break;
 			case AND_INT:
-			case AND_INT_2ADDR:
-			case AND_INT_LIT16:
-			case AND_INT_LIT8:
 			case AND_LONG:
-			case AND_LONG_2ADDR:
 				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.AND, false, false,
 						inst.getParameterRegister(0), inst.getParameterRegister(1), inst.getParameterRegister(2), true)); //Reihenfolge der Parameter
+				break;
+			case AND_INT_LIT16:
+			case AND_INT_LIT8:
+				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.AND, false, false,
+						inst.getParameterRegister(0), inst.getParameterRegister(1), (int) ((LiteralInstruction) inst.getInstruction()).getLiteral(), true)); //Literal
+				break;
+			case AND_INT_2ADDR:
+			case AND_LONG_2ADDR:
+				this.instructions.add(ssa.BinaryOpInstruction(inst.getInstructionIndex(), IBinaryOpInstruction.Operator.AND, false, false,
+						inst.getParameterRegister(0), inst.getParameterRegister(1), inst.getParameterRegister(0), true)); //Reihenfolge der Parameter
 				break;
 			case APUT_BOOLEAN:
 				this.instructions.add(ssa.ArrayStoreInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0),
@@ -233,34 +248,51 @@ public class Dex2Wala {
 				this.instructions.add(ssa.GotoInstruction(inst.getInstructionIndex()));
 				break;
 			case IF_EQ:
-			case IF_EQZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.EQ,
 						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
+			case IF_EQZ:
+				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.EQ,
+						TypeReference.Int, inst.getParameterRegister(0), 1)); //Parameter, Z, Typ Referenze
+				break;
 			case IF_GE:
-			case IF_GEZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.GE,
 						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
+			case IF_GEZ:
+				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.GE,
+						TypeReference.Int, 1, inst.getParameterRegister(0))); //Parameter, Z, Typ Referenze
 			case IF_GT:
-			case IF_GTZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.GT,
 						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
+			case IF_GTZ:
+				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.GT,
+						TypeReference.Int, inst.getParameterRegister(0), 1)); //Parameter, Z, Typ Referenze
+				break;
 			case IF_LE:
-			case IF_LEZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.LE,
 						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
+			case IF_LEZ:
+				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.LE,
+						TypeReference.Int, 1, 1)); //Parameter, Z, Typ Referenze
+				break;
 			case IF_LT:
-			case IF_LTZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.LT,
 						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
 				break;
+			case IF_LTZ:
+				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.LT,
+						TypeReference.Int, inst.getParameterRegister(0), 1)); //Parameter, Z, Typ Referenze
+				break;
 			case IF_NE:
-			case IF_NEZ:
 				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.NE,
 						TypeReference.Int, inst.getParameterRegister(0),inst.getParameterRegister(1))); //Parameter, Z, Typ Referenze
+				break;
+			case IF_NEZ:
+				this.instructions.add(ssa.ConditionalBranchInstruction(inst.getInstructionIndex(), IConditionalBranchInstruction.Operator.NE,
+						TypeReference.Int, inst.getParameterRegister(0), 1)); //Parameter, Z, Typ Referenze
 				break;
 			case IGET:
 			case IGET_BOOLEAN:
@@ -471,6 +503,9 @@ public class Dex2Wala {
 			case MOVE_WIDE_FROM16:
 				params = new int[1];
 				params[0] = inst.getParameterRegister(1);
+				if(params[0] == 0) {
+					params[0]++;
+				}
 				this.instructions.add(ssa.PhiInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0), params));
 			case MOVE_RESULT:
 			case MOVE_RESULT_OBJECT:
