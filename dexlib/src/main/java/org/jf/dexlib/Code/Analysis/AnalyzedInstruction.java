@@ -434,6 +434,10 @@ public class AnalyzedInstruction implements Comparable<AnalyzedInstruction> {
         if (registerNum < 0) {
         	throw new ExceptionWithContext(this.instruction.opcode.name + " has no parameter no. " + paramNum);
         }
+        if (registerNum == 0) {
+        	//System.out.println("Warning: Register is Zero");
+        	registerNum = 1;
+        }
         return registerNum;
     }
 
