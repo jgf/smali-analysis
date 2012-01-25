@@ -69,7 +69,7 @@ public class ClassDefinition {
 
     public ClassDefinition(ClassDefItem classDefItem) {
         this.classDefItem = classDefItem;
-        this.classDataItem = classDefItem.getClassData();
+        classDataItem = classDefItem.getClassData();
         buildAnnotationMaps();
         findFieldsSetInStaticConstructor();
     }
@@ -114,11 +114,11 @@ public class ClassDefinition {
     private void findFieldsSetInStaticConstructor() {
         fieldsSetInStaticConstructor = new SparseArray<FieldIdItem>();
 
-        if (classDataItem == null) {
+        if (getClassDataItem() == null) {
             return;
         }
 
-        for (ClassDataItem.EncodedMethod directMethod: classDataItem.getDirectMethods()) {
+        for (ClassDataItem.EncodedMethod directMethod: getClassDataItem().getDirectMethods()) {
             if (directMethod.method.getMethodName().getStringValue().equals("<clinit>") &&
                     directMethod.codeItem != null) {
                 for (Instruction instruction: directMethod.codeItem.getInstructions()) {
@@ -221,7 +221,7 @@ public class ClassDefinition {
     }
 
     private void writeStaticFields(IndentingWriter writer) throws IOException {
-        if (classDataItem == null) {
+        if (getClassDataItem() == null) {
             return;
         }
         //if classDataItem is not null, then classDefItem won't be null either
@@ -236,7 +236,7 @@ public class ClassDefinition {
             staticInitializers = new EncodedValue[0];
         }
 
-        ClassDataItem.EncodedField[] encodedFields = classDataItem.getStaticFields();
+        ClassDataItem.EncodedField[] encodedFields = getClassDataItem().getStaticFields();
         if (encodedFields == null || encodedFields.length == 0) {
             return;
         }
@@ -266,11 +266,11 @@ public class ClassDefinition {
     }
 
     private void writeInstanceFields(IndentingWriter writer) throws IOException {
-        if (classDataItem == null) {
+        if (getClassDataItem() == null) {
             return;
         }
 
-        ClassDataItem.EncodedField[] encodedFields = classDataItem.getInstanceFields();
+        ClassDataItem.EncodedField[] encodedFields = getClassDataItem().getInstanceFields();
         if (encodedFields == null || encodedFields.length == 0) {
             return;
         }
@@ -278,7 +278,7 @@ public class ClassDefinition {
         writer.write("\n\n");
         writer.write("# instance fields\n");
         boolean first = true;
-        for (ClassDataItem.EncodedField field: classDataItem.getInstanceFields()) {
+        for (ClassDataItem.EncodedField field: getClassDataItem().getInstanceFields()) {
             if (!first) {
                 writer.write('\n');
             }
@@ -291,11 +291,11 @@ public class ClassDefinition {
     }
 
     private void writeDirectMethods(IndentingWriter writer) throws IOException {
-        if (classDataItem == null) {
+        if (getClassDataItem() == null) {
             return;
         }
 
-        ClassDataItem.EncodedMethod[] directMethods = classDataItem.getDirectMethods();
+        ClassDataItem.EncodedMethod[] directMethods = getClassDataItem().getDirectMethods();
 
         if (directMethods == null || directMethods.length == 0) {
             return;
@@ -307,11 +307,11 @@ public class ClassDefinition {
     }
 
     private void writeVirtualMethods(IndentingWriter writer) throws IOException {
-        if (classDataItem == null) {
+        if (getClassDataItem() == null) {
             return;
         }
 
-        ClassDataItem.EncodedMethod[] virtualMethods = classDataItem.getVirtualMethods();
+        ClassDataItem.EncodedMethod[] virtualMethods = getClassDataItem().getVirtualMethods();
 
         if (virtualMethods == null || virtualMethods.length == 0) {
             return;
@@ -379,12 +379,12 @@ public class ClassDefinition {
     }
 
     public void dumpGraphs(GraphDumper gDump) throws FileNotFoundException {
-        if (classDataItem == null) {
+        if (getClassDataItem() == null) {
             System.err.println("No classDataItem for class " + toString());
             return;
         }
 
-        ClassDataItem.EncodedMethod[] directMethods = classDataItem.getDirectMethods();
+        ClassDataItem.EncodedMethod[] directMethods = getClassDataItem().getDirectMethods();
 
         if (directMethods != null) {
             for (ClassDataItem.EncodedMethod method : directMethods) {
@@ -399,7 +399,7 @@ public class ClassDefinition {
             }
         }
         
-        ClassDataItem.EncodedMethod[] virtualMethods = classDataItem.getVirtualMethods();
+        ClassDataItem.EncodedMethod[] virtualMethods = getClassDataItem().getVirtualMethods();
 
         if (virtualMethods != null) {
             for (ClassDataItem.EncodedMethod method : virtualMethods) {
@@ -414,4 +414,8 @@ public class ClassDefinition {
             }
         }
     }
+
+	public ClassDataItem getClassDataItem() {
+		return classDataItem;
+	}
 }

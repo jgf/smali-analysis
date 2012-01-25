@@ -694,7 +694,7 @@ public class Dex2Wala {
 				trc = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getContainingClass().getTypeDescriptor());
 				trf = TypeReference.findOrCreate(ClassLoaderReference.Application, fi.getFieldType().getTypeDescriptor());
 				fr = FieldReference.findOrCreate(trc, Atom.findOrCreateAsciiAtom(fi.getFieldName().getStringValue()), trf);
-				this.instructions.add(ssa.PutInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0), inst.getParameterRegister(0), fr)); //Reihenfolge Fieldref
+				this.instructions.add(ssa.PutInstruction(inst.getInstructionIndex(), inst.getParameterRegister(0), fr)); //Reihenfolge Fieldref
 				break;
 			case SUB_DOUBLE:
 			case SUB_FLOAT:

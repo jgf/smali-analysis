@@ -6,5 +6,14 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.core"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.shrike"/>
+	<classpathentry kind="src" path="/util"/>
+	<classpathentry kind="lib" path="C:/Users/Martin/.m2/repository/commons-cli/commons-cli/1.2/commons-cli-1.2.jar">
+		<attributes>
+			<attribute name="maven.groupId" value="commons-cli"/>
+			<attribute name="maven.artifactId" value="commons-cli"/>
+			<attribute name="maven.version" value="1.2"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
