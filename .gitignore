@@ -5,3 +5,12 @@ maven-smali-plugin/target
 smali/target
 util/target
 smali-integration-tests/target
+smaliLexer.java
+smaliLexer.tokens
+smaliParser.java
+smaliParser.tokens
+smaliTreeWalker.java
+smaliTreeWalker.tokens
+expectedTokensTestGrammar.tokens
+expectedTokensTestGrammarLexer.java
+expectedTokensTestGrammarParser.java
