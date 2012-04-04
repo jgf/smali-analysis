@@ -29,6 +29,7 @@
 package org.jf.baksmali;
 
 import org.apache.commons.cli.*;
+import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.DexFile;
 import org.jf.util.ConsoleUtil;
 import org.jf.util.smaliHelpFormatter;
@@ -113,6 +114,8 @@ public class main {
         boolean graphDOM = false;   // dump dominator trees
         boolean graphIncludeExceptions = false;   // include uncatched exceptions
 
+        int apiLevel = 14;
+
         int registerInfo = 0;
 
         String outputDirectory = "out";
@@ -124,7 +127,7 @@ public class main {
         StringBuffer extraBootClassPathEntries = new StringBuffer();
         List<String> bootClassPathDirs = new ArrayList<String>();
         bootClassPathDirs.add(".");
-
+        String inlineTable = null;
 
         String[] remainingArgs = commandLine.getArgs();
 
@@ -269,6 +272,9 @@ public class main {
                 case 'm':
                     noAccessorComments = true;
                     break;
+                case 'a':
+                    apiLevel = Integer.parseInt(commandLine.getOptionValue("a"));
+                    break;
                 case 'N':
                     disassemble = false;
                     break;
@@ -292,6 +298,9 @@ public class main {
                 case 'V':
                     verify = true;
                     break;
+                case 'T':
+                    inlineTable = commandLine.getOptionValue("T");
+                    break;
                 default:
                     assert false;
             }
@@ -310,6 +319,8 @@ public class main {
                 System.err.println("Can't find the file " + inputDexFileName);
                 System.exit(1);
             }
+
+            Opcode.updateMapsForApiLevel(apiLevel);
 
             //Read in and parse the dex file
             DexFile dexFile = new DexFile(dexFileFile, !fixRegisters, false);
@@ -343,7 +354,7 @@ public class main {
                 baksmali.disassembleDexFile(dexFileFile.getPath(), dexFile, deodex, outputDirectory,
                         bootClassPathDirsArray, bootClassPath, extraBootClassPathEntries.toString(),
                         noParameterRegisters, useLocalsDirective, useSequentialLabels, outputDebugInfo, addCodeOffsets,
-                        noAccessorComments, registerInfo, verify, ignoreErrors, 
+                        noAccessorComments, registerInfo, verify, ignoreErrors, inlineTable,
                         dumpWALA, graphCFG, graphDOM, graphCDG, graphIncludeExceptions, outputGraphDir);
             }
 
@@ -478,6 +489,13 @@ public class main {
                 .withDescription("don't output helper comments for synthetic accessors")
                 .create("m");
 
+        Option apiLevelOption = OptionBuilder.withLongOpt("api-level")
+                .withDescription("The numeric api-level of the file being disassembled. If not " +
+                        "specified, it defaults to 14 (ICS).")
+                .hasArg()
+                .withArgName("API_LEVEL")
+                .create("a");
+
         Option dumpOption = OptionBuilder.withLongOpt("dump-to")
                 .withDescription("dumps the given dex file into a single annotated dump file named FILE" +
                         " (<dexfile>.dump by default), along with the normal disassembly")
@@ -490,6 +508,7 @@ public class main {
                         " ignoring the class if needed, and continuing with the next class. The default" +
                         " behavior is to stop disassembling and exit once an error is encountered")
                 .create("I");
+
 
         Option noDisassemblyOption = OptionBuilder.withLongOpt("no-disassembly")
                 .withDescription("suppresses the output of the disassembly")
@@ -530,6 +549,12 @@ public class main {
                     "corresponding .smali file.\n" +
                     "Some examples of valid options: '-g CFG,DOM=/tmp', '-g CFG' or '-g CDG,EXC'")
             .create("g");
+        Option inlineTableOption = OptionBuilder.withLongOpt("inline-table")
+                .withDescription("specify a file containing a custom inline method table to use for deodexing")
+                .hasArg()
+                .withArgName("FILE")
+                .create("T");
+
         basicOptions.addOption(versionOption);
         basicOptions.addOption(helpOption);
         basicOptions.addOption(outputDirOption);
@@ -543,6 +568,7 @@ public class main {
         basicOptions.addOption(classPathDirOption);
         basicOptions.addOption(codeOffsetOption);
         basicOptions.addOption(noAccessorCommentsOption);
+        basicOptions.addOption(apiLevelOption);
 
         debugOptions.addOption(dumpOption);
         debugOptions.addOption(ignoreErrorsOption);
@@ -552,7 +578,7 @@ public class main {
         debugOptions.addOption(fixSignedRegisterOption);
         debugOptions.addOption(verifyDexOption);
         debugOptions.addOption(dumpGraphOption);
-
+        debugOptions.addOption(inlineTableOption);
 
         for (Object option: basicOptions.getOptions()) {
             options.addOption((Option)option);

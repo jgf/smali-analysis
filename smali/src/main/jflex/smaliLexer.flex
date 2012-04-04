@@ -364,7 +364,13 @@ Type = {PrimitiveType} | {ClassDescriptor} | {ArrayDescriptor}
         return newToken(ACCESS_SPEC);
     }
 
-    "vtable@0x" {HexDigit}+ { return newToken(VTABLE_OFFSET); }
+    "no-error" | "generic-error" | "no-such-class" | "no-such-field" | "no-such-method" | "illegal-class-access" |
+    "illegal-field-access" | "illegal-method-access" | "class-change-error" | "instantiation-error" {
+        return newToken(VERIFICATION_ERROR_TYPE);
+    }
+
+    "inline@0x" {HexDigit}+ { return newToken(INLINE_INDEX); }
+    "vtable@0x" {HexDigit}+ { return newToken(VTABLE_INDEX); }
     "field@0x" {HexDigit}+ { return newToken(FIELD_OFFSET); }
 
     "+" {Integer} { return newToken(OFFSET); }
@@ -380,6 +386,10 @@ Type = {PrimitiveType} | {ClassDescriptor} | {ArrayDescriptor}
 
     "return-void" | "nop" {
         return newToken(INSTRUCTION_FORMAT10x);
+    }
+
+    "return-void-barrier" {
+        return newToken(INSTRUCTION_FORMAT10x_ODEX);
     }
 
     "const/4" {
@@ -405,6 +415,10 @@ Type = {PrimitiveType} | {ClassDescriptor} | {ArrayDescriptor}
     "sub-float/2addr" | "mul-float/2addr" | "div-float/2addr" | "rem-float/2addr" | "add-double/2addr" |
     "sub-double/2addr" | "mul-double/2addr" | "div-double/2addr" | "rem-double/2addr" {
         return newToken(INSTRUCTION_FORMAT12x);
+    }
+
+    "throw-verification-error" {
+        return newToken(INSTRUCTION_FORMAT20bc);
     }
 
     "goto/16" {
@@ -519,15 +533,19 @@ Type = {PrimitiveType} | {ClassDescriptor} | {ArrayDescriptor}
         return newToken(INSTRUCTION_FORMAT35c_METHOD);
     }
 
+    "invoke-direct-empty" {
+        return newToken(INSTRUCTION_FORMAT35c_METHOD_ODEX);
+    }
+
     "filled-new-array" {
         return newToken(INSTRUCTION_FORMAT35c_TYPE);
     }
 
-    "invoke-direct-empty" {
-        return newToken(INSTRUCTION_FORMAT35s_METHOD);
+    "execute-inline" {
+        return newToken(INSTRUCTION_FORMAT35mi_METHOD);
     }
 
-    "execute-inline" | "invoke-virtual-quick" | "invoke-super-quick" {
+    "invoke-virtual-quick" | "invoke-super-quick" {
         return newToken(INSTRUCTION_FORMAT35ms_METHOD);
     }
 
@@ -536,16 +554,67 @@ Type = {PrimitiveType} | {ClassDescriptor} | {ArrayDescriptor}
         return newToken(INSTRUCTION_FORMAT3rc_METHOD);
     }
 
+    "invoke-object-init/range" {
+        return newToken(INSTRUCTION_FORMAT3rc_METHOD_ODEX);
+    }
+
     "filled-new-array/range" {
         return newToken(INSTRUCTION_FORMAT3rc_TYPE);
     }
 
-    "execute-inline/range" | "invoke-virtual-quick/range" | "invoke-super-quick/range" {
+    "execute-inline/range" {
+        return newToken(INSTRUCTION_FORMAT3rmi_METHOD);
+    }
+
+    "invoke-virtual-quick/range" | "invoke-super-quick/range" {
         return newToken(INSTRUCTION_FORMAT3rms_METHOD);
+    }
+
+    "check-cast/jumbo" | "new-instance/jumbo" | "const-class/jumbo" {
+        return newToken(INSTRUCTION_FORMAT41c_TYPE);
+    }
+
+    "sget/jumbo" | "sget-wide/jumbo" | "sget-object/jumbo" | "sget-boolean/jumbo" | "sget-byte/jumbo" |
+    "sget-char/jumbo" | "sget-short/jumbo" | "sput/jumbo" | "sput-wide/jumbo" | "sput-object/jumbo" |
+    "sput-boolean/jumbo" | "sput-byte/jumbo" | "sput-char/jumbo" | "sput-short/jumbo" {
+        return newToken(INSTRUCTION_FORMAT41c_FIELD);
+    }
+
+    "sget-volatile/jumbo" | "sget-wide-volatile/jumbo" | "sget-object-volatile/jumbo" | "sput-volatile/jumbo" |
+    "sput-wide-volatile/jumbo" | "sput-object-volatile/jumbo" {
+        return newToken(INSTRUCTION_FORMAT41c_FIELD_ODEX);
     }
 
     "const-wide" {
         return newToken(INSTRUCTION_FORMAT51l);
+    }
+
+    "instance-of/jumbo" | "new-array/jumbo" {
+        return newToken(INSTRUCTION_FORMAT52c_TYPE);
+    }
+
+    "iget/jumbo" | "iget-wide/jumbo" | "iget-object/jumbo" | "iget-boolean/jumbo" | "iget-byte/jumbo" |
+    "iget-char/jumbo" | "iget-short/jumbo" | "iput/jumbo" | "iput-wide/jumbo" | "iput-object/jumbo" |
+    "iput-boolean/jumbo" | "iput-byte/jumbo" | "iput-char/jumbo" | "iput-short/jumbo" {
+        return newToken(INSTRUCTION_FORMAT52c_FIELD);
+    }
+
+    "iget-volatile/jumbo" | "iget-wide-volatile/jumbo" | "iget-object-volatile/jumbo" | "iput-volatile/jumbo" |
+    "iput-wide-volatile/jumbo" | "iput-object-volatile/jumbo" {
+        return newToken(INSTRUCTION_FORMAT52c_FIELD_ODEX);
+    }
+
+    "invoke-virtual/jumbo" | "invoke-super/jumbo" | "invoke-direct/jumbo" | "invoke-static/jumbo" |
+    "invoke-interface/jumbo" {
+        return newToken(INSTRUCTION_FORMAT5rc_METHOD);
+    }
+
+    "invoke-object-init/jumbo" {
+        return newToken(INSTRUCTION_FORMAT5rc_METHOD_ODEX);
+    }
+
+    "filled-new-array/jumbo" {
+        return newToken(INSTRUCTION_FORMAT5rc_TYPE);
     }
 }
 

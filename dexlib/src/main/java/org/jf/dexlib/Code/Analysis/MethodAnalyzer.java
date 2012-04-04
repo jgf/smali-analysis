@@ -53,14 +53,19 @@ import org.jf.dexlib.Code.ThreeRegisterInstruction;
 import org.jf.dexlib.Code.TwoRegisterInstruction;
 import org.jf.dexlib.Code.Format.ArrayDataPseudoInstruction;
 import org.jf.dexlib.Code.Format.Format;
+import org.jf.dexlib.Code.Format.Instruction10x;
 import org.jf.dexlib.Code.Format.Instruction21c;
 import org.jf.dexlib.Code.Format.Instruction22c;
 import org.jf.dexlib.Code.Format.Instruction22cs;
 import org.jf.dexlib.Code.Format.Instruction35c;
+import org.jf.dexlib.Code.Format.Instruction35mi;
 import org.jf.dexlib.Code.Format.Instruction35ms;
-import org.jf.dexlib.Code.Format.Instruction35s;
 import org.jf.dexlib.Code.Format.Instruction3rc;
+import org.jf.dexlib.Code.Format.Instruction3rmi;
 import org.jf.dexlib.Code.Format.Instruction3rms;
+import org.jf.dexlib.Code.Format.Instruction41c;
+import org.jf.dexlib.Code.Format.Instruction52c;
+import org.jf.dexlib.Code.Format.Instruction5rc;
 import org.jf.dexlib.Code.Format.UnresolvedOdexInstruction;
 import org.jf.dexlib.Util.AccessFlags;
 import org.jf.dexlib.Util.ExceptionWithContext;
@@ -98,7 +103,8 @@ public class MethodAnalyzer {
     //instruction, etc.
     private AnalyzedInstruction startOfMethod;
 
-    public MethodAnalyzer(ClassDataItem.EncodedMethod encodedMethod, boolean deodex) {
+    public MethodAnalyzer(ClassDataItem.EncodedMethod encodedMethod, boolean deodex,
+                          InlineMethodResolver inlineResolver) {
         if (encodedMethod == null) {
             throw new IllegalArgumentException("encodedMethod cannot be null");
         }
@@ -108,7 +114,11 @@ public class MethodAnalyzer {
         this.encodedMethod = encodedMethod;
 
         if (deodex) {
-            this.deodexUtil = new DeodexUtil(encodedMethod.method.getDexFile());
+            if (inlineResolver != null) {
+                this.deodexUtil = new DeodexUtil(encodedMethod.method.getDexFile(), inlineResolver);
+            } else {
+                this.deodexUtil = new DeodexUtil(encodedMethod.method.getDexFile());
+            }
         } else {
             this.deodexUtil = null;
         }
@@ -279,11 +289,13 @@ public class MethodAnalyzer {
                 case Format22cs:
                     objectRegisterNumber = ((Instruction22cs)instruction.instruction).getRegisterB();
                     break;
+                case Format35mi:
                 case Format35ms:
-                    objectRegisterNumber = ((Instruction35ms)instruction.instruction).getRegisterD();
+                    objectRegisterNumber = ((FiveRegisterInstruction)instruction.instruction).getRegisterD();
                     break;
+                case Format3rmi:
                 case Format3rms:
-                    objectRegisterNumber = ((Instruction3rms)instruction.instruction).getStartRegister();
+                    objectRegisterNumber = ((RegisterRangeInstruction)instruction.instruction).getStartRegister();
                     break;
                 default:
                     continue;
@@ -690,6 +702,9 @@ public class MethodAnalyzer {
             case RETURN_WIDE:
             case RETURN_OBJECT:
                 return true;
+            case RETURN_VOID_BARRIER:
+                analyzeReturnVoidBarrier(analyzedInstruction);
+                return true;
             case CONST_4:
             case CONST_16:
             case CONST:
@@ -709,28 +724,34 @@ public class MethodAnalyzer {
                 analyzeConstString(analyzedInstruction);
                 return true;
             case CONST_CLASS:
+            case CONST_CLASS_JUMBO:
                 analyzeConstClass(analyzedInstruction);
                 return true;
             case MONITOR_ENTER:
             case MONITOR_EXIT:
                 return true;
             case CHECK_CAST:
+            case CHECK_CAST_JUMBO:
                 analyzeCheckCast(analyzedInstruction);
                 return true;
             case INSTANCE_OF:
+            case INSTANCE_OF_JUMBO:
                 analyzeInstanceOf(analyzedInstruction);
                 return true;
             case ARRAY_LENGTH:
                 analyzeArrayLength(analyzedInstruction);
                 return true;
             case NEW_INSTANCE:
+            case NEW_INSTANCE_JUMBO:
                 analyzeNewInstance(analyzedInstruction);
                 return true;
             case NEW_ARRAY:
+            case NEW_ARRAY_JUMBO:
                 analyzeNewArray(analyzedInstruction);
                 return true;
             case FILLED_NEW_ARRAY:
             case FILLED_NEW_ARRAY_RANGE:
+            case FILLED_NEW_ARRAY_JUMBO:
                 return true;
             case FILL_ARRAY_DATA:
                 analyzeArrayDataOrSwitch(analyzedInstruction);
@@ -793,58 +814,86 @@ public class MethodAnalyzer {
             case APUT_OBJECT:
                 return true;
             case IGET:
+            case IGET_JUMBO:
                 analyze32BitPrimitiveIget(analyzedInstruction, RegisterType.Category.Integer);
                 return true;
             case IGET_BOOLEAN:
+            case IGET_BOOLEAN_JUMBO:
                 analyze32BitPrimitiveIget(analyzedInstruction, RegisterType.Category.Boolean);
                 return true;
             case IGET_BYTE:
+            case IGET_BYTE_JUMBO:
                 analyze32BitPrimitiveIget(analyzedInstruction, RegisterType.Category.Byte);
                 return true;
             case IGET_CHAR:
+            case IGET_CHAR_JUMBO:
                 analyze32BitPrimitiveIget(analyzedInstruction, RegisterType.Category.Char);
                 return true;
             case IGET_SHORT:
+            case IGET_SHORT_JUMBO:
                 analyze32BitPrimitiveIget(analyzedInstruction, RegisterType.Category.Short);
                 return true;
             case IGET_WIDE:
+            case IGET_WIDE_JUMBO:
             case IGET_OBJECT:
+            case IGET_OBJECT_JUMBO:
                 analyzeIgetWideObject(analyzedInstruction);
                 return true;
             case IPUT:
+            case IPUT_JUMBO:
             case IPUT_BOOLEAN:
+            case IPUT_BOOLEAN_JUMBO:
             case IPUT_BYTE:
+            case IPUT_BYTE_JUMBO:
             case IPUT_CHAR:
+            case IPUT_CHAR_JUMBO:
             case IPUT_SHORT:
+            case IPUT_SHORT_JUMBO:
             case IPUT_WIDE:
+            case IPUT_WIDE_JUMBO:
             case IPUT_OBJECT:
+            case IPUT_OBJECT_JUMBO:
                 return true;
             case SGET:
+            case SGET_JUMBO:
                 analyze32BitPrimitiveSget(analyzedInstruction, RegisterType.Category.Integer);
                 return true;
             case SGET_BOOLEAN:
+            case SGET_BOOLEAN_JUMBO:
                 analyze32BitPrimitiveSget(analyzedInstruction, RegisterType.Category.Boolean);
                 return true;
             case SGET_BYTE:
+            case SGET_BYTE_JUMBO:
                 analyze32BitPrimitiveSget(analyzedInstruction, RegisterType.Category.Byte);
                 return true;
             case SGET_CHAR:
+            case SGET_CHAR_JUMBO:
                 analyze32BitPrimitiveSget(analyzedInstruction, RegisterType.Category.Char);
                 return true;
             case SGET_SHORT:
+            case SGET_SHORT_JUMBO:
                 analyze32BitPrimitiveSget(analyzedInstruction, RegisterType.Category.Short);
                 return true;
             case SGET_WIDE:
+            case SGET_WIDE_JUMBO:
             case SGET_OBJECT:
+            case SGET_OBJECT_JUMBO:
                 analyzeSgetWideObject(analyzedInstruction);
                 return true;
             case SPUT:
+            case SPUT_JUMBO:
             case SPUT_BOOLEAN:
+            case SPUT_BOOLEAN_JUMBO:
             case SPUT_BYTE:
+            case SPUT_BYTE_JUMBO:
             case SPUT_CHAR:
+            case SPUT_CHAR_JUMBO:
             case SPUT_SHORT:
+            case SPUT_SHORT_JUMBO:
             case SPUT_WIDE:
+            case SPUT_WIDE_JUMBO:
             case SPUT_OBJECT:
+            case SPUT_OBJECT_JUMBO:
                 return true;
             case INVOKE_VIRTUAL:
             case INVOKE_SUPER:
@@ -855,13 +904,18 @@ public class MethodAnalyzer {
             case INVOKE_STATIC:
             case INVOKE_INTERFACE:
             case INVOKE_VIRTUAL_RANGE:
+            case INVOKE_VIRTUAL_JUMBO:
             case INVOKE_SUPER_RANGE:
+            case INVOKE_SUPER_JUMBO:
                 return true;
             case INVOKE_DIRECT_RANGE:
+            case INVOKE_DIRECT_JUMBO:
                 analyzeInvokeDirectRange(analyzedInstruction);
                 return true;
             case INVOKE_STATIC_RANGE:
+            case INVOKE_STATIC_JUMBO:
             case INVOKE_INTERFACE_RANGE:
+            case INVOKE_INTERFACE_JUMBO:
                 return true;
             case NEG_INT:
             case NOT_INT:
@@ -1048,6 +1102,8 @@ public class MethodAnalyzer {
             case SPUT_WIDE_VOLATILE:
                 analyzePutGetVolatile(analyzedInstruction);
                 return true;
+            case THROW_VERIFICATION_ERROR:
+                return true;
             case EXECUTE_INLINE:
                 analyzeExecuteInline(analyzedInstruction);
                 return true;
@@ -1056,6 +1112,9 @@ public class MethodAnalyzer {
                 return true;
             case INVOKE_DIRECT_EMPTY:
                 analyzeInvokeDirectEmpty(analyzedInstruction);
+                return true;
+            case INVOKE_OBJECT_INIT_RANGE:
+                analyzeInvokeObjectInitRange(analyzedInstruction);
                 return true;
             case IGET_QUICK:
             case IGET_WIDE_QUICK:
@@ -1077,6 +1136,23 @@ public class MethodAnalyzer {
             case SPUT_OBJECT_VOLATILE:
                 analyzePutGetVolatile(analyzedInstruction);
                 return true;
+            case INVOKE_OBJECT_INIT_JUMBO:
+                analyzeInvokeObjectInitJumbo(analyzedInstruction);
+                return true;
+            case IGET_VOLATILE_JUMBO:
+            case IGET_WIDE_VOLATILE_JUMBO:
+            case IGET_OBJECT_VOLATILE_JUMBO:
+            case IPUT_VOLATILE_JUMBO:
+            case IPUT_WIDE_VOLATILE_JUMBO:
+            case IPUT_OBJECT_VOLATILE_JUMBO:
+            case SGET_VOLATILE_JUMBO:
+            case SGET_WIDE_VOLATILE_JUMBO:
+            case SGET_OBJECT_VOLATILE_JUMBO:
+            case SPUT_VOLATILE_JUMBO:
+            case SPUT_WIDE_VOLATILE_JUMBO:
+            case SPUT_OBJECT_VOLATILE_JUMBO:
+                analyzePutGetVolatile(analyzedInstruction);
+                return true;
             default:
                 assert false;
                 return true;
@@ -1084,7 +1160,7 @@ public class MethodAnalyzer {
     }
 
 
-        private void verifyInstruction(AnalyzedInstruction analyzedInstruction) {
+    private void verifyInstruction(AnalyzedInstruction analyzedInstruction) {
         Instruction instruction = analyzedInstruction.instruction;
 
         switch (instruction.opcode) {
@@ -1118,6 +1194,7 @@ public class MethodAnalyzer {
                 verifyMoveException(analyzedInstruction);
                 return;
             case RETURN_VOID:
+            case RETURN_VOID_BARRIER:
                 verifyReturnVoid(analyzedInstruction);
                 return;
             case RETURN:
@@ -1141,6 +1218,7 @@ public class MethodAnalyzer {
             case CONST_STRING_JUMBO:
                 return;
             case CONST_CLASS:
+            case CONST_CLASS_JUMBO:
                 verifyConstClass(analyzedInstruction);
                 return;
             case MONITOR_ENTER:
@@ -1148,15 +1226,18 @@ public class MethodAnalyzer {
                 verifyMonitor(analyzedInstruction);
                 return;
             case CHECK_CAST:
+            case CHECK_CAST_JUMBO:
                 verifyCheckCast(analyzedInstruction);
                 return;
             case INSTANCE_OF:
+            case INSTANCE_OF_JUMBO:
                 verifyInstanceOf(analyzedInstruction);
                 return;
             case ARRAY_LENGTH:
                 verifyArrayLength(analyzedInstruction);
                 return;
             case NEW_INSTANCE:
+            case NEW_INSTANCE_JUMBO:
                 verifyNewInstance(analyzedInstruction);
                 return;
             case NEW_ARRAY:
@@ -1548,9 +1629,11 @@ public class MethodAnalyzer {
             case IPUT_WIDE_VOLATILE:
             case SGET_WIDE_VOLATILE:
             case SPUT_WIDE_VOLATILE:
+            case THROW_VERIFICATION_ERROR:
             case EXECUTE_INLINE:
             case EXECUTE_INLINE_RANGE:
             case INVOKE_DIRECT_EMPTY:
+            case INVOKE_OBJECT_INIT_RANGE:
             case IGET_QUICK:
             case IGET_WIDE_QUICK:
             case IGET_OBJECT_QUICK:
@@ -1564,6 +1647,19 @@ public class MethodAnalyzer {
             case IPUT_OBJECT_VOLATILE:
             case SGET_OBJECT_VOLATILE:
             case SPUT_OBJECT_VOLATILE:
+            case INVOKE_OBJECT_INIT_JUMBO:
+            case IGET_VOLATILE_JUMBO:
+            case IGET_WIDE_VOLATILE_JUMBO:
+            case IGET_OBJECT_VOLATILE_JUMBO:
+            case IPUT_VOLATILE_JUMBO:
+            case IPUT_WIDE_VOLATILE_JUMBO:
+            case IPUT_OBJECT_VOLATILE_JUMBO:
+            case SGET_VOLATILE_JUMBO:
+            case SGET_WIDE_VOLATILE_JUMBO:
+            case SGET_OBJECT_VOLATILE_JUMBO:
+            case SPUT_VOLATILE_JUMBO:
+            case SPUT_WIDE_VOLATILE_JUMBO:
+            case SPUT_OBJECT_VOLATILE_JUMBO:
                 //TODO: throw validation exception?
             default:
                 assert false;
@@ -1757,6 +1853,16 @@ public class MethodAnalyzer {
             throw new ValidationException(String.format("Exception type %s is not a reference type",
                     exceptionType.toString()));
         }
+    }
+
+    private void analyzeReturnVoidBarrier(AnalyzedInstruction analyzedInstruction) {
+        Instruction10x instruction = (Instruction10x)analyzedInstruction.instruction;
+
+        Instruction10x deodexedInstruction = new Instruction10x(Opcode.RETURN_VOID);
+
+        analyzedInstruction.setDeodexedInstruction(deodexedInstruction);
+
+        analyzeInstruction(analyzedInstruction);
     }
 
     private void verifyReturnVoid(AnalyzedInstruction analyzedInstruction) {
@@ -3371,13 +3477,13 @@ public class MethodAnalyzer {
             throw new ValidationException("Cannot analyze an odexed instruction unless we are deodexing");
         }
 
-        Instruction35ms instruction = (Instruction35ms)analyzedInstruction.instruction;
+        Instruction35mi instruction = (Instruction35mi)analyzedInstruction.instruction;
 
         DeodexUtil.InlineMethod inlineMethod = deodexUtil.lookupInlineMethod(analyzedInstruction);
-        MethodIdItem inlineMethodIdItem = inlineMethod.getMethodIdItem();
+        MethodIdItem inlineMethodIdItem = inlineMethod.getMethodIdItem(deodexUtil);
         if (inlineMethodIdItem == null) {
             throw new ValidationException(String.format("Cannot load inline method with index %d",
-                    instruction.getMethodIndex()));
+                    instruction.getInlineIndex()));
         }
 
         Opcode deodexedOpcode = null;
@@ -3409,13 +3515,13 @@ public class MethodAnalyzer {
             throw new ValidationException("Cannot analyze an odexed instruction unless we are deodexing");
         }
 
-        Instruction3rms instruction = (Instruction3rms)analyzedInstruction.instruction;
+        Instruction3rmi instruction = (Instruction3rmi)analyzedInstruction.instruction;
 
         DeodexUtil.InlineMethod inlineMethod = deodexUtil.lookupInlineMethod(analyzedInstruction);
-        MethodIdItem inlineMethodIdItem = inlineMethod.getMethodIdItem();
+        MethodIdItem inlineMethodIdItem = inlineMethod.getMethodIdItem(deodexUtil);
         if (inlineMethodIdItem == null) {
             throw new ValidationException(String.format("Cannot load inline method with index %d",
-                    instruction.getMethodIndex()));
+                    instruction.getInlineIndex()));
         }
 
         Opcode deodexedOpcode = null;
@@ -3433,7 +3539,7 @@ public class MethodAnalyzer {
                 assert false;
         }
 
-        Instruction3rc deodexedInstruction = new Instruction3rc(deodexedOpcode, instruction.getRegCount(),
+        Instruction3rc deodexedInstruction = new Instruction3rc(deodexedOpcode, (short)instruction.getRegCount(),
                 instruction.getStartRegister(), inlineMethodIdItem);
 
         analyzedInstruction.setDeodexedInstruction(deodexedInstruction);
@@ -3442,11 +3548,22 @@ public class MethodAnalyzer {
     }
 
     private void analyzeInvokeDirectEmpty(AnalyzedInstruction analyzedInstruction) {
-        Instruction35s instruction = (Instruction35s)analyzedInstruction.instruction;
+        Instruction35c instruction = (Instruction35c)analyzedInstruction.instruction;
 
         Instruction35c deodexedInstruction = new Instruction35c(Opcode.INVOKE_DIRECT, instruction.getRegCount(),
                 instruction.getRegisterD(), instruction.getRegisterE(), instruction.getRegisterF(),
                 instruction.getRegisterG(), instruction.getRegisterA(), instruction.getReferencedItem());
+
+        analyzedInstruction.setDeodexedInstruction(deodexedInstruction);
+
+        analyzeInstruction(analyzedInstruction);
+    }
+
+    private void analyzeInvokeObjectInitRange(AnalyzedInstruction analyzedInstruction) {
+        Instruction3rc instruction = (Instruction3rc)analyzedInstruction.instruction;
+
+        Instruction3rc deodexedInstruction = new Instruction3rc(Opcode.INVOKE_DIRECT_RANGE,
+                (short)instruction.getRegCount(), instruction.getStartRegister(), instruction.getReferencedItem());
 
         analyzedInstruction.setDeodexedInstruction(deodexedInstruction);
 
@@ -3491,11 +3608,11 @@ public class MethodAnalyzer {
 
         if (isRange) {
             Instruction3rms instruction = (Instruction3rms)analyzedInstruction.instruction;
-            methodIndex = instruction.getMethodIndex();
+            methodIndex = instruction.getVtableIndex();
             objectRegister = instruction.getStartRegister();
         } else {
             Instruction35ms instruction = (Instruction35ms)analyzedInstruction.instruction;
-            methodIndex = instruction.getMethodIndex();
+            methodIndex = instruction.getVtableIndex();
             objectRegister = instruction.getRegisterD();
         }
 
@@ -3542,7 +3659,7 @@ public class MethodAnalyzer {
                 opcode = Opcode.INVOKE_VIRTUAL_RANGE;
             }
 
-            deodexedInstruction = new Instruction3rc(opcode, instruction.getRegCount(),
+            deodexedInstruction = new Instruction3rc(opcode, (short)instruction.getRegCount(),
                     instruction.getStartRegister(), methodIdItem);
         } else {
             Instruction35ms instruction = (Instruction35ms)analyzedInstruction.instruction;
@@ -3577,20 +3694,40 @@ public class MethodAnalyzer {
 
         if (analyzedInstruction.instruction.opcode.isOdexedStaticVolatile()) {
             SingleRegisterInstruction instruction = (SingleRegisterInstruction)analyzedInstruction.instruction;
-
-            deodexedInstruction = new Instruction21c(opcode, (byte)instruction.getRegisterA(),
-                fieldIdItem);
+            if (analyzedInstruction.instruction.opcode.format == Format.Format21c) {
+                deodexedInstruction = new Instruction21c(opcode, (byte)instruction.getRegisterA(), fieldIdItem);
+            } else {
+                assert(analyzedInstruction.instruction.opcode.format == Format.Format41c);
+                deodexedInstruction = new Instruction41c(opcode, (byte)instruction.getRegisterA(), fieldIdItem);
+            }
         } else {
             TwoRegisterInstruction instruction = (TwoRegisterInstruction)analyzedInstruction.instruction;
 
-            deodexedInstruction = new Instruction22c(opcode, (byte)instruction.getRegisterA(),
-                (byte)instruction.getRegisterB(), fieldIdItem);
+            if (analyzedInstruction.instruction.opcode.format == Format.Format22c) {
+                deodexedInstruction = new Instruction22c(opcode, (byte)instruction.getRegisterA(),
+                    (byte)instruction.getRegisterB(), fieldIdItem);
+            } else {
+                assert(analyzedInstruction.instruction.opcode.format == Format.Format52c);
+                deodexedInstruction = new Instruction52c(opcode, (byte)instruction.getRegisterA(),
+                    (byte)instruction.getRegisterB(), fieldIdItem);
+            }
         }
 
         analyzedInstruction.setDeodexedInstruction(deodexedInstruction);
         analyzeInstruction(analyzedInstruction);
 
         return true;
+    }
+
+    private void analyzeInvokeObjectInitJumbo(AnalyzedInstruction analyzedInstruction) {
+        Instruction5rc instruction = (Instruction5rc)analyzedInstruction.instruction;
+
+        Instruction5rc deodexedInstruction = new Instruction5rc(Opcode.INVOKE_DIRECT_JUMBO,
+                instruction.getRegCount(), instruction.getStartRegister(), instruction.getReferencedItem());
+
+        analyzedInstruction.setDeodexedInstruction(deodexedInstruction);
+
+        analyzeInstruction(analyzedInstruction);
     }
 
     private static boolean checkArrayFieldAssignment(RegisterType.Category arrayFieldCategory,

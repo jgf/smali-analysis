@@ -37,7 +37,8 @@ import org.jf.dexlib.Code.TwoRegisterInstruction;
 import org.jf.dexlib.Util.AnnotatedOutput;
 import org.jf.dexlib.Util.NumberUtils;
 
-public class Instruction22c extends InstructionWithReference implements TwoRegisterInstruction {
+public class Instruction22c extends InstructionWithReference implements TwoRegisterInstruction,
+        InstructionWithJumboVariant {
     public static final Instruction.InstructionFactory Factory = new Factory();
     private byte regA;
     private byte regB;
@@ -62,6 +63,15 @@ public class Instruction22c extends InstructionWithReference implements TwoRegis
     }
 
     protected void writeInstruction(AnnotatedOutput out, int currentCodeAddress) {
+        if(getReferencedItem().getIndex() > 0xFFFF) {
+            if (opcode.hasJumboOpcode()) {
+                throw new RuntimeException(String.format("%s index is too large. Use the %s instruction instead.",
+                        opcode.referenceType.name(), opcode.getJumboOpcode().name));
+            } else {
+                throw new RuntimeException(String.format("%s index is too large.", opcode.referenceType.name()));
+            }
+        }
+
         out.writeByte(opcode.value);
         out.writeByte((regB << 4) | regA);
         out.writeShort(getReferencedItem().getIndex());
@@ -77,6 +87,15 @@ public class Instruction22c extends InstructionWithReference implements TwoRegis
 
     public int getRegisterB() {
         return regB;
+    }
+
+    public Instruction makeJumbo() {
+        Opcode jumboOpcode = opcode.getJumboOpcode();
+        if (jumboOpcode == null) {
+            return null;
+        }
+
+        return new Instruction52c(jumboOpcode, getRegisterA(), getRegisterB(), getReferencedItem());
     }
 
     private static class Factory implements Instruction.InstructionFactory {

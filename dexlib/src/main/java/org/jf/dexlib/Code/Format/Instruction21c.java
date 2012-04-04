@@ -37,7 +37,8 @@ import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Code.SingleRegisterInstruction;
 import org.jf.dexlib.Util.AnnotatedOutput;
 
-public class Instruction21c extends InstructionWithReference implements SingleRegisterInstruction {
+public class Instruction21c extends InstructionWithReference implements SingleRegisterInstruction,
+        InstructionWithJumboVariant {
     public static final Instruction.InstructionFactory Factory = new Factory();
     private byte regA;
 
@@ -71,8 +72,13 @@ public class Instruction21c extends InstructionWithReference implements SingleRe
     }
 
     protected void writeInstruction(AnnotatedOutput out, int currentCodeAddress) {
-        if(opcode == Opcode.CONST_STRING && getReferencedItem().getIndex() > 0xFFFF) {
-            throw new RuntimeException("String offset is too large for const-string. Use string-const/jumbo instead.");
+        if(getReferencedItem().getIndex() > 0xFFFF) {
+            if (opcode.hasJumboOpcode()) {
+                throw new RuntimeException(String.format("%s index is too large. Use the %s instruction instead.",
+                        opcode.referenceType.name(), opcode.getJumboOpcode().name));
+            } else {
+                throw new RuntimeException(String.format("%s index is too large", opcode.referenceType.name()));
+            }
         }
 
         out.writeByte(opcode.value);
@@ -86,6 +92,19 @@ public class Instruction21c extends InstructionWithReference implements SingleRe
 
     public int getRegisterA() {
         return regA & 0xFF;
+    }
+
+    public Instruction makeJumbo() {
+        Opcode jumboOpcode = opcode.getJumboOpcode();
+        if (jumboOpcode == null) {
+            return null;
+        }
+
+        if (jumboOpcode.format == Format.Format31c) {
+            return new Instruction31c(jumboOpcode, (short)getRegisterA(), getReferencedItem());
+        }
+
+        return new Instruction41c(jumboOpcode, getRegisterA(), getReferencedItem());
     }
 
     private static class Factory implements Instruction.InstructionFactory {

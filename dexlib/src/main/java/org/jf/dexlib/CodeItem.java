@@ -33,13 +33,13 @@ import java.util.List;
 
 import org.jf.dexlib.Code.Instruction;
 import org.jf.dexlib.Code.InstructionIterator;
+import org.jf.dexlib.Code.InstructionWithReference;
 import org.jf.dexlib.Code.MultiOffsetInstruction;
 import org.jf.dexlib.Code.OffsetInstruction;
 import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Code.Format.Instruction20t;
-import org.jf.dexlib.Code.Format.Instruction21c;
 import org.jf.dexlib.Code.Format.Instruction30t;
-import org.jf.dexlib.Code.Format.Instruction31c;
+import org.jf.dexlib.Code.Format.InstructionWithJumboVariant;
 import org.jf.dexlib.Debug.DebugInstructionIterator;
 import org.jf.dexlib.Debug.DebugOpcode;
 import org.jf.dexlib.Util.AlignmentUtils;
@@ -246,7 +246,7 @@ public class CodeItem extends Item<CodeItem> {
             if (debugInfo == null) {
                 out.annotate(4, "debug_info_off:");
             } else {
-                out.annotate(4, "debug_info_off: 0x" + debugInfo.getOffset());
+                out.annotate(4, "debug_info_off: 0x" + Integer.toHexString(debugInfo.getOffset()));
             }
             out.annotate(4, "insns_size: 0x" + Integer.toHexString(instructionsLength) + " (" +
                     (instructionsLength) + ")");
@@ -420,10 +420,11 @@ public class CodeItem extends Item<CodeItem> {
      * - Replace goto and goto/16 with a larger version of goto, when the target is too far away
      * TODO: we should be able to replace if-* instructions with targets that are too far away with a negated if followed by a goto/32 to the original target
      * TODO: remove multiple nops that occur before a switch/array data pseudo instruction. In some cases, multiple smali-baksmali cycles with changes in between could cause nops to start piling up
+     * TODO: in case of non-range invoke with a jumbo-sized method reference, we could check if the registers are sequential, and replace it with the jumbo variant (which only takes a register range)
      *
      * The above fixes are applied iteratively, until no more fixes have been performed
      */
-    public void fixInstructions(boolean fixStringConst, boolean fixGoto) {
+    public void fixInstructions(boolean fixJumbo, boolean fixGoto) {
         try {
             boolean didSomething = false;
 
@@ -465,15 +466,20 @@ public class CodeItem extends Item<CodeItem> {
                                 didSomething = true;
                                 break;
                             }
-                        } else if (fixStringConst && instruction.opcode == Opcode.CONST_STRING) {
-                            Instruction21c constStringInstruction = (Instruction21c)instruction;
-                            if (constStringInstruction.getReferencedItem().getIndex() > 0xFFFF) {
-                                replaceInstructionAtAddress(currentCodeAddress,
-                                        new Instruction31c(Opcode.CONST_STRING_JUMBO,
-                                        (short)constStringInstruction.getRegisterA(),
-                                        constStringInstruction.getReferencedItem()));
-                                didSomething = true;
-                                break;
+                        } else if (fixJumbo && instruction.opcode.hasJumboOpcode()) {
+                            InstructionWithReference referenceInstruction = (InstructionWithReference)instruction;
+                            if (referenceInstruction.getReferencedItem().getIndex() > 0xFFFF) {
+
+                                InstructionWithJumboVariant instructionWithJumboVariant =
+                                        (InstructionWithJumboVariant)referenceInstruction;
+
+                                Instruction jumboInstruction = instructionWithJumboVariant.makeJumbo();
+                                if (jumboInstruction != null) {
+                                    replaceInstructionAtAddress(currentCodeAddress,
+                                            instructionWithJumboVariant.makeJumbo());
+                                    didSomething = true;
+                                    break;
+                                }
                             }
                         }
 

@@ -173,13 +173,6 @@ public class DexFile
      */
     private boolean sortAllItems = false;
 
-
-    /**
-     * this is used to access the dex file from within inner classes, when they declare fields or
-     * variable that hide fields on this object
-     */
-    private final DexFile dexFile = this;
-
     /**
      * Is this file an odex file? This is only set when reading in an odex file
      */
@@ -346,12 +339,19 @@ public class DexFile
             boolean isDex = false;
             this.isOdex = false;
 
-            if (Arrays.equals(magic, HeaderItem.MAGIC)) {
-                isDex = true;
-            } else if (Arrays.equals(magic, OdexHeader.MAGIC_35)) {
-                isOdex = true;
-            } else if (Arrays.equals(magic, OdexHeader.MAGIC_36)) {
-                isOdex = true;
+            for (int i=0; i<HeaderItem.MAGIC_VALUES.length; i++) {
+                byte[] magic_value = HeaderItem.MAGIC_VALUES[i];
+                if (Arrays.equals(magic, magic_value)) {
+                    isDex = true;
+                    break;
+                }
+            }
+            if (!isDex) {
+                if (Arrays.equals(magic, OdexHeader.MAGIC_35)) {
+                    isOdex = true;
+                } else if (Arrays.equals(magic, OdexHeader.MAGIC_36)) {
+                    isOdex = true;
+                }
             }
 
             if (isOdex) {
@@ -777,7 +777,7 @@ public class DexFile
             new IndexedSection<ClassDefItem>(this, ItemType.TYPE_CLASS_DEF_ITEM) {
 
          public int placeAt(int offset) {
-            if (dexFile.getInplace()) {
+            if (DexFile.this.getInplace()) {
                 return super.placeAt(offset);
             }
 

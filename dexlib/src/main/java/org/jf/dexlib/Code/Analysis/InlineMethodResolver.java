@@ -32,11 +32,9 @@ import static org.jf.dexlib.Code.Analysis.DeodexUtil.Direct;
 import static org.jf.dexlib.Code.Analysis.DeodexUtil.Static;
 import static org.jf.dexlib.Code.Analysis.DeodexUtil.Virtual;
 
-import org.jf.dexlib.Code.OdexedInvokeVirtual;
-import org.jf.dexlib.Code.Format.Instruction35ms;
-import org.jf.dexlib.Code.Format.Instruction3rms;
+import org.jf.dexlib.Code.OdexedInvokeInline;
 
-abstract class InlineMethodResolver {
+public abstract class InlineMethodResolver {
     public static InlineMethodResolver createInlineMethodResolver(DeodexUtil deodexUtil, int odexVersion) {
         if (odexVersion == 35) {
             return new InlineMethodResolver_version35(deodexUtil);
@@ -47,7 +45,7 @@ abstract class InlineMethodResolver {
         }
     }
 
-    private InlineMethodResolver() {
+    protected InlineMethodResolver() {
     }
 
     public abstract DeodexUtil.InlineMethod resolveExecuteInline(AnalyzedInstruction instruction);
@@ -58,36 +56,36 @@ abstract class InlineMethodResolver {
 
         public InlineMethodResolver_version35(DeodexUtil deodexUtil) {
             inlineMethods = new DeodexUtil.InlineMethod[] {
-                deodexUtil.new InlineMethod(Static, "Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "", "V"),
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "charAt", "I", "C"),
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "compareTo", "Ljava/lang/String;", "I"),
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "equals", "Ljava/lang/Object;", "Z"),
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "length", "", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "I", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "J", "J"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "F", "F"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "D", "D"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "min", "II", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "max", "II", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "sqrt", "D", "D"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "cos", "D", "D"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "sin", "D", "D")
+                new DeodexUtil.InlineMethod(Static, "Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "", "V"),
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "charAt", "I", "C"),
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "compareTo", "Ljava/lang/String;", "I"),
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "equals", "Ljava/lang/Object;", "Z"),
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "length", "", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "I", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "J", "J"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "F", "F"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "D", "D"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "min", "II", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "max", "II", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "sqrt", "D", "D"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "cos", "D", "D"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "sin", "D", "D")
             };
         }
 
         @Override
         public DeodexUtil.InlineMethod resolveExecuteInline(AnalyzedInstruction analyzedInstruction) {
-            assert analyzedInstruction.instruction instanceof OdexedInvokeVirtual;
+            assert analyzedInstruction.instruction instanceof OdexedInvokeInline;
 
-            OdexedInvokeVirtual instruction = (OdexedInvokeVirtual)analyzedInstruction.instruction;
-            int methodIndex = instruction.getMethodIndex();
+            OdexedInvokeInline instruction = (OdexedInvokeInline)analyzedInstruction.instruction;
+            int inlineIndex = instruction.getInlineIndex();
 
-            if (methodIndex < 0 || methodIndex >= inlineMethods.length) {
-                throw new RuntimeException("Invalid method index: " + methodIndex);
+            if (inlineIndex < 0 || inlineIndex >= inlineMethods.length) {
+                throw new RuntimeException("Invalid inline index: " + inlineIndex);
             }
-            return inlineMethods[methodIndex];
+            return inlineMethods[inlineIndex];
         }
-    };
+    }
 
     private static class InlineMethodResolver_version36 extends InlineMethodResolver
     {
@@ -103,55 +101,55 @@ abstract class InlineMethodResolver {
             //passed to distinguish between them.
 
             //froyo
-            indexOfIMethod = deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "indexOf", "I", "I");
-            indexOfIIMethod = deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "indexOf", "II", "I");
+            indexOfIMethod = new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "indexOf", "I", "I");
+            indexOfIIMethod = new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "indexOf", "II", "I");
 
             //gingerbread
-            fastIndexOfMethod = deodexUtil.new InlineMethod(Direct, "Ljava/lang/String;", "fastIndexOf", "II", "I");
-            isEmptyMethod = deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "isEmpty", "", "Z");
+            fastIndexOfMethod = new DeodexUtil.InlineMethod(Direct, "Ljava/lang/String;", "fastIndexOf", "II", "I");
+            isEmptyMethod = new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "isEmpty", "", "Z");
 
             inlineMethods = new DeodexUtil.InlineMethod[] {
-                deodexUtil.new InlineMethod(Static, "Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "", "V"),
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "charAt", "I", "C"),
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "compareTo", "Ljava/lang/String;", "I"),
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "equals", "Ljava/lang/Object;", "Z"),
+                new DeodexUtil.InlineMethod(Static, "Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "", "V"),
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "charAt", "I", "C"),
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "compareTo", "Ljava/lang/String;", "I"),
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "equals", "Ljava/lang/Object;", "Z"),
                 //froyo: deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "indexOf", "I", "I"),
                 //gingerbread: deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "fastIndexOf", "II", "I"),
                 null,
                 //froyo: deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "indexOf", "II", "I"),
                 //gingerbread: deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "isEmpty", "", "Z"),
                 null,
-                deodexUtil.new InlineMethod(Virtual, "Ljava/lang/String;", "length", "", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "I", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "J", "J"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "F", "F"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "abs", "D", "D"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "min", "II", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "max", "II", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "sqrt", "D", "D"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "cos", "D", "D"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Math;", "sin", "D", "D"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Float;", "floatToIntBits", "F", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Float;", "floatToRawIntBits", "F", "I"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Float;", "intBitsToFloat", "I", "F"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Double;", "doubleToLongBits", "D", "J"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Double;", "doubleToRawLongBits", "D", "J"),
-                deodexUtil.new InlineMethod(Static, "Ljava/lang/Double;", "longBitsToDouble", "J", "D")
+                new DeodexUtil.InlineMethod(Virtual, "Ljava/lang/String;", "length", "", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "I", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "J", "J"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "F", "F"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "abs", "D", "D"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "min", "II", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "max", "II", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "sqrt", "D", "D"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "cos", "D", "D"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Math;", "sin", "D", "D"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Float;", "floatToIntBits", "F", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Float;", "floatToRawIntBits", "F", "I"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Float;", "intBitsToFloat", "I", "F"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Double;", "doubleToLongBits", "D", "J"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Double;", "doubleToRawLongBits", "D", "J"),
+                new DeodexUtil.InlineMethod(Static, "Ljava/lang/Double;", "longBitsToDouble", "J", "D")
             };
         }
 
         @Override
         public DeodexUtil.InlineMethod resolveExecuteInline(AnalyzedInstruction analyzedInstruction) {
-            assert analyzedInstruction.instruction instanceof OdexedInvokeVirtual;
+            assert analyzedInstruction.instruction instanceof OdexedInvokeInline;
 
-            OdexedInvokeVirtual instruction = (OdexedInvokeVirtual)analyzedInstruction.instruction;
-            int methodIndex = instruction.getMethodIndex();
+            OdexedInvokeInline instruction = (OdexedInvokeInline)analyzedInstruction.instruction;
+            int inlineIndex = instruction.getInlineIndex();
 
-            if (methodIndex < 0 || methodIndex >= inlineMethods.length) {
-                throw new RuntimeException("Invalid method index: " + methodIndex);
+            if (inlineIndex < 0 || inlineIndex >= inlineMethods.length) {
+                throw new RuntimeException("Invalid method index: " + inlineIndex);
             }
 
-            if (methodIndex == 4) {
+            if (inlineIndex == 4) {
                 int parameterCount = getParameterCount(instruction);
                 if (parameterCount == 2) {
                     return indexOfIMethod;
@@ -160,7 +158,7 @@ abstract class InlineMethodResolver {
                 } else {
                     throw new RuntimeException("Could not determine the correct inline method to use");
                 }
-            } else if (methodIndex == 5) {
+            } else if (inlineIndex == 5) {
                 int parameterCount = getParameterCount(instruction);
                 if (parameterCount == 3) {
                     return indexOfIIMethod;
@@ -171,15 +169,11 @@ abstract class InlineMethodResolver {
                 }
             }
 
-            return inlineMethods[methodIndex];
+            return inlineMethods[inlineIndex];
         }
 
-        private int getParameterCount(OdexedInvokeVirtual instruction) {
-            if (instruction instanceof Instruction35ms) {
-                return ((Instruction35ms)instruction).getRegCount();
-            } else {
-                return ((Instruction3rms)instruction).getRegCount();
-            }
+        private int getParameterCount(OdexedInvokeInline instruction) {
+            return instruction.getRegCount();
         }
-    };
+    }
 }

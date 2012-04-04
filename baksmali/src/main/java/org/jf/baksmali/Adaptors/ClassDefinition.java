@@ -32,6 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
+import org.jf.baksmali.baksmali;
 import org.jf.dexlib.AnnotationDirectoryItem;
 import org.jf.dexlib.AnnotationSetItem;
 import org.jf.dexlib.AnnotationSetRefList;
@@ -49,6 +50,7 @@ import org.jf.dexlib.Code.Analysis.MethodAnalyzer;
 import org.jf.dexlib.Code.Analysis.ValidationException;
 import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
 import org.jf.dexlib.Code.Format.Instruction21c;
+import org.jf.dexlib.Code.Format.Instruction41c;
 import org.jf.dexlib.EncodedValue.EncodedValue;
 import org.jf.dexlib.Util.AccessFlags;
 import org.jf.dexlib.Util.SparseArray;
@@ -129,10 +131,24 @@ public class ClassDefinition {
                         case SPUT_CHAR:
                         case SPUT_OBJECT:
                         case SPUT_SHORT:
-                        case SPUT_WIDE:
+                        case SPUT_WIDE: {
                             Instruction21c ins = (Instruction21c)instruction;
                             FieldIdItem fieldIdItem = (FieldIdItem)ins.getReferencedItem();
                             fieldsSetInStaticConstructor.put(fieldIdItem.getIndex(), fieldIdItem);
+                            break;
+                        }
+                        case SPUT_JUMBO:
+                        case SPUT_BOOLEAN_JUMBO:
+                        case SPUT_BYTE_JUMBO:
+                        case SPUT_CHAR_JUMBO:
+                        case SPUT_OBJECT_JUMBO:
+                        case SPUT_SHORT_JUMBO:
+                        case SPUT_WIDE_JUMBO: {
+                            Instruction41c ins = (Instruction41c)instruction;
+                            FieldIdItem fieldIdItem = (FieldIdItem)ins.getReferencedItem();
+                            fieldsSetInStaticConstructor.put(fieldIdItem.getIndex(), fieldIdItem);
+                            break;
+                        }
                     }
                 }
             }
@@ -392,7 +408,7 @@ public class ClassDefinition {
                     continue;
                 }
                 
-                final MethodAnalyzer analyzer = new MethodAnalyzer(method, false);
+                final MethodAnalyzer analyzer = new MethodAnalyzer(method, false, baksmali.inlineResolver);
                 analyzer.analyze();
                 final List<AnalyzedInstruction> instructions = analyzer.getInstructions();
                 gDump.dump(instructions, method.method.getVirtualMethodString());
@@ -407,7 +423,7 @@ public class ClassDefinition {
                     continue;
                 }
                 
-                final MethodAnalyzer analyzer = new MethodAnalyzer(method, false);
+                final MethodAnalyzer analyzer = new MethodAnalyzer(method, false, baksmali.inlineResolver);
                 analyzer.analyze();
                 final List<AnalyzedInstruction> instructions = analyzer.getInstructions();
                 gDump.dump(instructions, method.method.getVirtualMethodString());

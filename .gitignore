@@ -4,3 +4,4 @@ dexlib/target
 maven-smali-plugin/target
 smali/target
 util/target
+smali-integration-tests/target

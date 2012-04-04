@@ -59,8 +59,10 @@ import org.jf.dexlib.ClassDataItem.EncodedMethod;
 import org.jf.dexlib.ClassDefItem;
 import org.jf.dexlib.CodeItem;
 import org.jf.dexlib.DexFile;
+import org.jf.dexlib.Code.Opcode;
 import org.jf.dexlib.Code.Analysis.AnalyzedInstruction;
 import org.jf.dexlib.Code.Analysis.ClassPath;
+import org.jf.dexlib.Code.Analysis.DeodexUtil;
 import org.jf.dexlib.Code.Analysis.MethodAnalyzer;
 import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
 import org.jf.dexlib.Util.ByteArrayAnnotatedOutput;
@@ -118,8 +120,9 @@ public class main {
             return;
         }
 
+        boolean allowOdex = false;
         boolean sort = false;
-        boolean fixStringConst = true;
+        boolean fixJumbo = true;
         boolean fixGoto = true;
         boolean verboseErrors = false;
         boolean oldLexer = false;
@@ -130,6 +133,9 @@ public class main {
         boolean graphIncludeExceptions = false;   // include uncatched exceptions
          
         String outputGraphDir = "./out/"; // use ./out/ if not set
+        boolean apiSet = false;
+        int apiLevel = 14;
+
         String outputDexFile = "out.dex";
         String dumpFileName = null;
         String bootClassPath = null; // only used for analysis needed for graph computation
@@ -161,14 +167,21 @@ public class main {
                 case 'o':
                     outputDexFile = commandLine.getOptionValue("o");
                     break;
+                case 'x':
+                    allowOdex = true;
+                    break;
+                case 'a':
+                    apiLevel = Integer.parseInt(commandLine.getOptionValue("a"));
+                    apiSet = true;
+                    break;
                 case 'D':
                     dumpFileName = commandLine.getOptionValue("D", outputDexFile + ".dump");
                     break;
                 case 'S':
                     sort = true;
                     break;
-                case 'C':
-                    fixStringConst = false;
+                case 'J':
+                    fixJumbo = false;
                     break;
                 case 'G':
                     fixGoto = false;
@@ -269,12 +282,18 @@ public class main {
                     }
             }
 
+            Opcode.updateMapsForApiLevel(apiLevel);
+
             DexFile dexFile = new DexFile();
+
+            if (apiSet && apiLevel >= 14) {
+                dexFile.HeaderItem.setVersion(36);
+            }
 
             boolean errors = false;
 
             for (File file: filesToProcess) {
-                if (!assembleSmaliFile(file, dexFile, verboseErrors, oldLexer, printTokens)) {
+                if (!assembleSmaliFile(file, dexFile, verboseErrors, oldLexer, printTokens, allowOdex, apiLevel)) {
                     errors = true;
                 }
             }
@@ -288,8 +307,8 @@ public class main {
                 dexFile.setSortAllItems(true);
             }
 
-            if (fixStringConst || fixGoto) {
-                fixInstructions(dexFile, fixStringConst, fixGoto);
+            if (fixJumbo || fixGoto) {
+                fixInstructions(dexFile, fixJumbo, fixGoto);
             }
 
             dexFile.place();
@@ -370,7 +389,7 @@ public class main {
                     
                     if (clsData.getDirectMethods() != null) {
                         for (EncodedMethod em : clsData.getDirectMethods()) {
-                            MethodAnalyzer analyze = new MethodAnalyzer(em, false);
+                            MethodAnalyzer analyze = new MethodAnalyzer(em, false, null);
                             analyze.analyze();
                             List<AnalyzedInstruction> instructions = analyze.getInstructions();
                             final String mName = em.method.getVirtualMethodString();
@@ -384,7 +403,7 @@ public class main {
                                 continue;
                             }
                             
-                            MethodAnalyzer analyze = new MethodAnalyzer(em, false);
+                            MethodAnalyzer analyze = new MethodAnalyzer(em, false, null);
                             analyze.analyze();
                             List<AnalyzedInstruction> instructions = analyze.getInstructions();
                             final String mName = em.method.getVirtualMethodString();
@@ -440,18 +459,16 @@ public class main {
         }
     }
 
-    private static void fixInstructions(DexFile dexFile, boolean fixStringConst, boolean fixGoto) {
+    private static void fixInstructions(DexFile dexFile, boolean fixJumbo, boolean fixGoto) {
         dexFile.place();
 
-        byte[] newInsns = null;
-
         for (CodeItem codeItem: dexFile.CodeItemsSection.getItems()) {
-            codeItem.fixInstructions(fixStringConst, fixGoto);
+            codeItem.fixInstructions(fixJumbo, fixGoto);
         }
     }
 
     private static boolean assembleSmaliFile(File smaliFile, DexFile dexFile, boolean verboseErrors, boolean oldLexer,
-                                             boolean printTokens)
+                                             boolean printTokens, boolean allowOdex, int apiLevel)
             throws Exception {
         CommonTokenStream tokens;
 
@@ -489,6 +506,8 @@ public class main {
 
         smaliParser parser = new smaliParser(tokens);
         parser.setVerboseErrors(verboseErrors);
+        parser.setAllowOdex(allowOdex);
+        parser.setApiLevel(apiLevel);
 
         smaliParser.smali_file_return result = parser.smali_file();
 
@@ -564,6 +583,19 @@ public class main {
                 .withArgName("FILE")
                 .create("o");
 
+        Option allowOdexOption = OptionBuilder.withLongOpt("allow-odex-instructions")
+                .withDescription("allow odex instructions to be compiled into the dex file. Only a few" +
+                        " instructions are supported - the ones that can exist in a dead code path and not" +
+                        " cause dalvik to reject the class")
+                .create("x");
+
+        Option apiLevelOption = OptionBuilder.withLongOpt("api-level")
+                .withDescription("The numeric api-level of the file to generate, e.g. 14 for ICS. If not " +
+                        "specified, it defaults to 14 (ICS).")
+                .hasArg()
+                .withArgName("API_LEVEL")
+                .create("a");
+
         Option dumpOption = OptionBuilder.withLongOpt("dump-to")
                 .withDescription("additionally writes a dump of written dex file to FILE (<dexfile>.dump by default)")
                 .hasOptionalArg()
@@ -574,9 +606,9 @@ public class main {
                 .withDescription("sort the items in the dex file into a canonical order before writing")
                 .create("S");
 
-        Option noFixStringConstOption = OptionBuilder.withLongOpt("no-fix-string-const")
-                .withDescription("Don't replace string-const instructions with string-const/jumbo where appropriate")
-                .create("C");
+        Option noFixJumboOption = OptionBuilder.withLongOpt("no-fix-jumbo")
+                .withDescription("Don't automatically instructions with the /jumbo variant where appropriate")
+                .create("J");
 
         Option noFixGotoOption = OptionBuilder.withLongOpt("no-fix-goto")
                 .withDescription("Don't replace goto type instructions with a larger version where appropriate")
@@ -628,10 +660,12 @@ public class main {
         basicOptions.addOption(versionOption);
         basicOptions.addOption(helpOption);
         basicOptions.addOption(outputOption);
+        basicOptions.addOption(allowOdexOption);
+        basicOptions.addOption(apiLevelOption);
 
         debugOptions.addOption(dumpOption);
         debugOptions.addOption(sortOption);
-        debugOptions.addOption(noFixStringConstOption);
+        debugOptions.addOption(noFixJumboOption);
         debugOptions.addOption(noFixGotoOption);
         debugOptions.addOption(verboseErrorsOption);
         debugOptions.addOption(oldLexerOption);

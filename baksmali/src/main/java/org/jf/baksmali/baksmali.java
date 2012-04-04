@@ -43,6 +43,8 @@ import org.jf.baksmali.Adaptors.ClassDefinition;
 import org.jf.dexlib.ClassDefItem;
 import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Analysis.ClassPath;
+import org.jf.dexlib.Code.Analysis.CustomInlineMethodResolver;
+import org.jf.dexlib.Code.Analysis.InlineMethodResolver;
 import org.jf.dexlib.Code.Analysis.SyntheticAccessorResolver;
 import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
 import org.jf.util.ClassFileNameHandler;
@@ -58,6 +60,7 @@ public class baksmali {
     public static boolean deodex = false;
     public static boolean verify = false;
     public static boolean dumpGraph = false;
+    public static InlineMethodResolver inlineResolver = null;
     public static int registerInfo = 0;
     public static String bootClassPath;
 
@@ -71,7 +74,7 @@ public class baksmali {
     {
         disassembleDexFile(dexFilePath, dexFile, deodex, outputDirectory, classPathDirs, bootClassPath, 
                 extraBootClassPath, noParameterRegisters, useLocalsDirective, useSequentialLabels, 
-                outputDebugInfo, addCodeOffsets, noAccessorComments, registerInfo, verify, ignoreErrors,
+                outputDebugInfo, addCodeOffsets, noAccessorComments, registerInfo, verify, ignoreErrors, null,
                 false, false, false, false, false, null);
     }
     
@@ -80,6 +83,7 @@ public class baksmali {
                                           boolean noParameterRegisters, boolean useLocalsDirective,
                                           boolean useSequentialLabels, boolean outputDebugInfo, boolean addCodeOffsets,
                                           boolean noAccessorComments, int registerInfo, boolean verify, boolean ignoreErrors,
+                                          String inlineTable,
                                           boolean dumpWALA, boolean graphCFG, boolean graphDOM, boolean graphCDG, boolean graphIncludeExc,
                                           String outputGraphDir)
     {
@@ -130,6 +134,10 @@ public class baksmali {
                     }
                     ClassPath.InitializeClassPath(classPathDirs, bootClassPathArray, extraBootClassPathArray,
                             dexFilePath, dexFile, classPathErrorHandler);
+                }
+
+                if (inlineTable != null) {
+                    inlineResolver = new CustomInlineMethodResolver(inlineTable);
                 }
             } catch (Exception ex) {
                 System.err.println("\n\nError occured while loading boot class path files. Aborting.");

@@ -331,7 +331,22 @@ ACCESS_SPEC
 	|	'volatile'
 	|	'transient';
 
-VTABLE_OFFSET
+VERIFICATION_ERROR_TYPE
+    :   'no-error'
+    |   'generic-error'
+    |   'no-such-class'
+    |   'no-such-field'
+    |   'no-such-method'
+    |   'illegal-class-access'
+    |   'illegal-field-access'
+    |   'illegal-method-access'
+    |   'class-change-error'
+    |   'instantiation-error';
+
+INLINE_INDEX
+	:	'inline@0x' HEX_DIGIT+;
+
+VTABLE_INDEX
 	:	'vtable@0x' HEX_DIGIT+;
 
 FIELD_OFFSET
@@ -357,6 +372,9 @@ INSTRUCTION_FORMAT10t
 INSTRUCTION_FORMAT10x
 	:	'return-void'
 	|	'nop';
+
+INSTRUCTION_FORMAT10x_ODEX
+	:	'return-void-barrier';
 
 INSTRUCTION_FORMAT11n
 	:	'const/4';
@@ -433,6 +451,9 @@ INSTRUCTION_FORMAT12x
 	|	'mul-double/2addr'
 	|	'div-double/2addr'
 	|	'rem-double/2addr';
+
+INSTRUCTION_FORMAT20bc
+    :   'throw-verification-error';
 
 INSTRUCTION_FORMAT20t
 	:	'goto/16';
@@ -642,15 +663,17 @@ INSTRUCTION_FORMAT35c_METHOD
 	|	'invoke-static'
 	|	'invoke-interface';
 
+INSTRUCTION_FORMAT35c_METHOD_ODEX
+	:	'invoke-direct-empty';
+
 INSTRUCTION_FORMAT35c_TYPE
 	:	'filled-new-array';
 
-INSTRUCTION_FORMAT35s_METHOD
-	:	'invoke-direct-empty';
+INSTRUCTION_FORMAT35mi_METHOD
+	:	'execute-inline';
 
 INSTRUCTION_FORMAT35ms_METHOD
-	:	'execute-inline'
-	|	'invoke-virtual-quick'
+	:	'invoke-virtual-quick'
 	|	'invoke-super-quick';
 
 INSTRUCTION_FORMAT3rc_METHOD
@@ -660,16 +683,91 @@ INSTRUCTION_FORMAT3rc_METHOD
 	|	'invoke-static/range'
 	|	'invoke-interface/range';
 
+INSTRUCTION_FORMAT3rc_METHOD_ODEX
+	:	'invoke-object-init/range';
+
 INSTRUCTION_FORMAT3rc_TYPE
 	:	'filled-new-array/range';
 
+INSTRUCTION_FORMAT3rmi_METHOD
+	:	'execute-inline/range';
+
 INSTRUCTION_FORMAT3rms_METHOD
-	:	'execute-inline/range'
-	|	'invoke-virtual-quick/range'
+	:	'invoke-virtual-quick/range'
 	|	'invoke-super-quick/range';
+
+INSTRUCTION_FORMAT41c_TYPE
+	:	'check-cast/jumbo'
+	|	'new-instance/jumbo'
+	|	'const-class/jumbo';
+
+INSTRUCTION_FORMAT41c_FIELD
+	:	'sget/jumbo'
+	|	'sget-wide/jumbo'
+	|	'sget-object/jumbo'
+	|	'sget-boolean/jumbo'
+	|	'sget-byte/jumbo'
+	|	'sget-char/jumbo'
+	|	'sget-short/jumbo'
+	|	'sput/jumbo'
+	|	'sput-wide/jumbo'
+	|	'sput-object/jumbo'
+	|	'sput-boolean/jumbo'
+	|	'sput-byte/jumbo'
+	|	'sput-char/jumbo'
+	|	'sput-short/jumbo';
+
+INSTRUCTION_FORMAT41c_FIELD_ODEX
+	:	'sget-volatile/jumbo'
+	|	'sget-wide-volatile/jumbo'
+	|	'sget-object-volatile/jumbo'
+	|	'sput-volatile/jumbo'
+	|	'sput-wide-volatile/jumbo'
+	|	'sput-object-volatile/jumbo';
 
 INSTRUCTION_FORMAT51l
 	:	'const-wide';
+
+INSTRUCTION_FORMAT52c_TYPE
+	:	'instance-of/jumbo'
+	|	'new-array/jumbo';
+
+INSTRUCTION_FORMAT52c_FIELD
+	:	'iget/jumbo'
+	|	'iget-wide/jumbo'
+	|	'iget-object/jumbo'
+	|	'iget-boolean/jumbo'
+	|	'iget-byte/jumbo'
+	|	'iget-char/jumbo'
+	|	'iget-short/jumbo'
+	|	'iput/jumbo'
+	|	'iput-wide/jumbo'
+	|	'iput-object/jumbo'
+	|	'iput-boolean/jumbo'
+	|	'iput-byte/jumbo'
+	|	'iput-char/jumbo'
+	|	'iput-short/jumbo';
+
+INSTRUCTION_FORMAT52c_FIELD_ODEX
+	:	'iget-volatile/jumbo'
+	|	'iget-wide-volatile/jumbo'
+	|	'iget-object-volatile/jumbo'
+	|	'iput-volatile/jumbo'
+	|	'iput-wide-volatile/jumbo'
+	|	'iput-object-volatile/jumbo';
+
+INSTRUCTION_FORMAT5rc_METHOD
+	:	'invoke-virtual/jumbo'
+	|	'invoke-super/jumbo'
+	|	'invoke-direct/jumbo'
+	|	'invoke-static/jumbo'
+	|	'invoke-interface/jumbo';
+
+INSTRUCTION_FORMAT5rc_METHOD_ODEX
+	:	'invoke-object-init/jumbo';
+
+INSTRUCTION_FORMAT5rc_TYPE
+	:	'filled-new-array/jumbo';
 
 
 /**********************************************************

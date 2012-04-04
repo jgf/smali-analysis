@@ -31,6 +31,7 @@ package org.jf.baksmali.Adaptors.Format;
 import org.jf.baksmali.Adaptors.MethodItem;
 import org.jf.baksmali.Adaptors.ReferenceFormatter;
 import org.jf.baksmali.Adaptors.RegisterFormatter;
+import org.jf.dexlib.Code.Format.Instruction20bc;
 import org.jf.util.IndentingWriter;
 import org.jf.baksmali.Renderers.LongRenderer;
 import org.jf.dexlib.Code.*;
@@ -84,6 +85,13 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
                 writer.write(", ");
                 writeSecondRegister(writer);
                 return true;
+            case Format20bc:
+                writeOpcode(writer);
+                writer.write(' ');
+                writeVerificationErrorType(writer);
+                writer.write(", ");
+                writeReference(writer);
+                return true;
             case Format20t:
             case Format30t:
                 writeOpcode(writer);
@@ -92,6 +100,7 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
                 return true;
             case Format21c:
             case Format31c:
+            case Format41c:
                 writeOpcode(writer);
                 writer.write(' ');
                 writeFirstRegister(writer);
@@ -127,6 +136,7 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
                 writeLiteral(writer);
                 return true;
             case Format22c:
+            case Format52c:
                 writeOpcode(writer);
                 writer.write(' ');
                 writeFirstRegister(writer);
@@ -171,12 +181,18 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
                 writeThirdRegister(writer);
                 return true;
             case Format35c:
-            case Format35s:
                 writeOpcode(writer);
                 writer.write(' ');
                 writeInvokeRegisters(writer);
                 writer.write(", ");
                 writeReference(writer);
+                return true;
+            case Format35mi:
+                writeOpcode(writer);
+                writer.write(' ');
+                writeInvokeRegisters(writer);
+                writer.write(", ");
+                writeInlineIndex(writer);
                 return true;
             case Format35ms:
                 writeOpcode(writer);
@@ -186,11 +202,19 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
                 writeVtableIndex(writer);
                 return true;
             case Format3rc:
+            case Format5rc:
                 writeOpcode(writer);
                 writer.write(' ');
                 writeInvokeRangeRegisters(writer);
                 writer.write(", ");
                 writeReference(writer);
+                return true;
+            case Format3rmi:
+                writeOpcode(writer);
+                writer.write(' ');
+                writeInvokeRangeRegisters(writer);
+                writer.write(", ");
+                writeInlineIndex(writer);
                 return true;
             case Format3rms:
                 writeOpcode(writer);
@@ -296,13 +320,23 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
         writer.printUnsignedLongAsHex(((OdexedFieldAccess) instruction).getFieldOffset());
     }
 
+    protected void writeInlineIndex(IndentingWriter writer) throws IOException {
+        writer.write("inline@0x");
+        writer.printUnsignedLongAsHex(((OdexedInvokeInline) instruction).getInlineIndex());
+    }
+
     protected void writeVtableIndex(IndentingWriter writer) throws IOException {
         writer.write("vtable@0x");
-        writer.printUnsignedLongAsHex(((OdexedInvokeVirtual) instruction).getMethodIndex());
+        writer.printUnsignedLongAsHex(((OdexedInvokeVirtual) instruction).getVtableIndex());
     }
 
     protected void writeReference(IndentingWriter writer) throws IOException {
         Item item = ((InstructionWithReference)instruction).getReferencedItem();
         ReferenceFormatter.writeReference(writer, item);
+    }
+
+    protected void writeVerificationErrorType(IndentingWriter writer) throws IOException {
+        VerificationErrorType validationErrorType = ((Instruction20bc)instruction).getValidationErrorType();
+        writer.write(validationErrorType.getName());
     }
 }

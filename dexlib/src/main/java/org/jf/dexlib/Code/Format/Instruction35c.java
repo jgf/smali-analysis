@@ -32,6 +32,7 @@ import static org.jf.dexlib.Code.Opcode.FILLED_NEW_ARRAY;
 import static org.jf.dexlib.Code.Opcode.INVOKE_INTERFACE;
 import static org.jf.dexlib.Code.Opcode.INVOKE_STATIC;
 import static org.jf.dexlib.Code.Opcode.INVOKE_VIRTUAL;
+import static org.jf.dexlib.Code.Opcode.INVOKE_DIRECT_EMPTY;
 
 import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Item;
@@ -69,22 +70,18 @@ public class Instruction35c extends InstructionWithReference implements FiveRegi
             throw new RuntimeException("All register args must fit in 4 bits");
         }
 
+        checkItem(opcode, referencedItem, regCount);
+
         this.regCount = (byte)regCount;
         this.regA = regA;
         this.regD = regD;
         this.regE = regE;
         this.regF = regF;
         this.regG = regG;
-
-        checkItem(opcode, referencedItem, regCount);
     }
 
     protected Instruction35c(DexFile dexFile, Opcode opcode, byte[] buffer, int bufferIndex) {
         super(dexFile, opcode, buffer, bufferIndex);
-
-        if (getRegCount() > 5) {
-            throw new RuntimeException("regCount cannot be greater than 5");
-        }
 
         this.regCount = NumberUtils.decodeHighUnsignedNibble(buffer[bufferIndex + 1]);
         this.regA = NumberUtils.decodeLowUnsignedNibble(buffer[bufferIndex + 1]);
@@ -93,10 +90,23 @@ public class Instruction35c extends InstructionWithReference implements FiveRegi
         this.regF = NumberUtils.decodeLowUnsignedNibble(buffer[bufferIndex + 5]);
         this.regG = NumberUtils.decodeHighUnsignedNibble(buffer[bufferIndex + 5]);
 
+        if (getRegCount() > 5) {
+            throw new RuntimeException("regCount cannot be greater than 5");
+        }
+
         checkItem(opcode, getReferencedItem(), getRegCount());
     }
 
     protected void writeInstruction(AnnotatedOutput out, int currentCodeAddress) {
+        if(getReferencedItem().getIndex() > 0xFFFF) {
+            if (opcode.hasJumboOpcode()) {
+                throw new RuntimeException(String.format("%s index is too large. Use the %s instruction instead.",
+                        opcode.referenceType.name(), opcode.getJumboOpcode().name));
+            } else {
+                throw new RuntimeException(String.format("%s index is too large.", opcode.referenceType.name()));
+            }
+        }
+
         out.writeByte(opcode.value);
         out.writeByte((regCount << 4) | regA);
         out.writeShort(getReferencedItem().getIndex());
@@ -108,7 +118,7 @@ public class Instruction35c extends InstructionWithReference implements FiveRegi
         return Format.Format35c;
     }
 
-    public byte getRegCount() {
+    public int getRegCount() {
         return regCount;
     }
 
@@ -142,7 +152,8 @@ public class Instruction35c extends InstructionWithReference implements FiveRegi
             if (type.charAt(1) == 'J' || type.charAt(1) == 'D') {
                 throw new RuntimeException("The type cannot be an array of longs or doubles");
             }
-        } else if (opcode.value >= INVOKE_VIRTUAL.value && opcode.value <= INVOKE_INTERFACE.value) {
+        } else if (opcode.value >= INVOKE_VIRTUAL.value && opcode.value <= INVOKE_INTERFACE.value ||
+                opcode == INVOKE_DIRECT_EMPTY) {
             //check data for invoke-* opcodes
             MethodIdItem methodIdItem = (MethodIdItem) item;
             int parameterRegisterCount = methodIdItem.getPrototype().getParameterRegisterCount();

@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.util.List;
 
 import org.jf.dexlib.Code.Analysis.AnalyzedInstruction;
-import org.jf.dexlib.Code.Analysis.wala.Dex2Wala;
 
 public class GraphDumper {
 
@@ -27,7 +26,7 @@ public class GraphDumper {
     
     public void dump(final List<AnalyzedInstruction> instructions, final String name) throws FileNotFoundException {
     	if (dumpWALA) {
-    		Dex2Wala.build(instructions, name);
+//    		Dex2Wala.build(instructions, name);
     	}
     	
         if (!dumpCFG && !dumpDOM && !dumpCDG) {

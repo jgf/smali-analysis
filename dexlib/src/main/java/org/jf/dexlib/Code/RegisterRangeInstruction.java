@@ -28,7 +28,6 @@
 
 package org.jf.dexlib.Code;
 
-public interface RegisterRangeInstruction {
-    short getRegCount();
+public interface RegisterRangeInstruction extends InvokeInstruction {
     int getStartRegister();
 }
