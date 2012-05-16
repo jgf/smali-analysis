@@ -9,11 +9,16 @@ import java.util.Comparator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jf.baksmali.Adaptors.ClassDefinition;
+import org.jf.dexlib.ClassDataItem;
 import org.jf.dexlib.ClassDefItem;
 import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Analysis.ClassPath;
+import org.jf.dexlib.Code.Analysis.InlineMethodResolver;
 import org.jf.dexlib.Code.Analysis.SyntheticAccessorResolver;
 import org.jf.dexlib.Interface.DexAnalysis;
+import org.jf.dexlib.Interface.DexClass;
+import org.jf.dexlib.Interface.DexMethod;
 import org.jf.dexlib.Interface.DexProgram;
 
 public class BakSmaliAnalysis implements DexAnalysis<BakSmaliAnalysis.BakSmaliInput> {
@@ -141,36 +146,39 @@ public class BakSmaliAnalysis implements DexAnalysis<BakSmaliAnalysis.BakSmaliIn
 					continue;
 				}
 
-				//TODO move to baksmali??? or create EncodedMethods by other means. 
 				// create and initialize the top level string template
-//				ClassDefinition classDefinition = new ClassDefinition(classDefItem);
-//
-//				try {
-//					ClassDataItem.EncodedMethod[] directMethods = classDefinition.getClassDataItem().getDirectMethods();
-//					if (directMethods != null) {
-//						for (ClassDataItem.EncodedMethod method : directMethods) {
-//							if (method.codeItem == null	|| method.codeItem.getInstructions().length == 0) {
-//								continue;
-//							}
-//
-//						//	new Dex2Wala(method).build(); // !!!!!
-//						}
-//					}
-//					ClassDataItem.EncodedMethod[] virtualMethods = classDefinition.getClassDataItem().getVirtualMethods();
-//					if (virtualMethods != null) {
-//						for (ClassDataItem.EncodedMethod method : virtualMethods) {
-//							if (method.codeItem == null || method.codeItem.getInstructions().length == 0) {
-//								continue;
-//							}
-//
-////							new Dex2Wala(method).build(); // !!!!!
-//						}
-//					}
-//
-//				} catch (Exception ex) {
-//					conf.out.println("\n\nError occured while disassembling class "	+ classDescriptor.replace('/', '.')	+ " - skipping class");
-//					ex.printStackTrace(conf.out);
-//				}
+				final ClassDefinition classDefinition = new ClassDefinition(classDefItem);
+				final DexClass dexClass = new DexClass(classDefItem, classDef);
+				dexProg.addClass(dexClass);
+
+				try {
+					final ClassDataItem.EncodedMethod[] directMethods = classDefinition.getClassDataItem().getDirectMethods();
+					if (directMethods != null) {
+						for (ClassDataItem.EncodedMethod method : directMethods) {
+							if (method.codeItem == null	|| method.codeItem.getInstructions().length == 0) {
+								continue;
+							}
+
+							final DexMethod dexMethod = DexMethod.build(method, conf.deodex, conf.inlineResolver);
+							dexClass.addMethod(dexMethod);
+						}
+					}
+					
+					final ClassDataItem.EncodedMethod[] virtualMethods = classDefinition.getClassDataItem().getVirtualMethods();
+					if (virtualMethods != null) {
+						for (ClassDataItem.EncodedMethod method : virtualMethods) {
+							if (method.codeItem == null || method.codeItem.getInstructions().length == 0) {
+								continue;
+							}
+
+							final DexMethod dexMethod = DexMethod.build(method, conf.deodex, conf.inlineResolver);
+							dexClass.addMethod(dexMethod);
+						}
+					}
+				} catch (Exception ex) {
+					conf.out.println("\n\nError occured while disassembling class "	+ classDescriptor.replace('/', '.')	+ " - skipping class");
+					ex.printStackTrace(conf.out);
+				}
 			}
 
 			return dexProg;
@@ -182,6 +190,8 @@ public class BakSmaliAnalysis implements DexAnalysis<BakSmaliAnalysis.BakSmaliIn
 	public static class Config {
 		public String androidJars = "data/core.jar:data/ext.jar:data/framework.jar:data/android.policy.jar:data/services.jar";
 		public PrintStream out = System.out;
+		public boolean deodex = false;
+		public InlineMethodResolver inlineResolver = null;
 		
 		public String toString() {
 			final StringBuilder sb = new StringBuilder("DexAnalysis configuration:\n");

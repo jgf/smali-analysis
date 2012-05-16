@@ -1,7 +1,6 @@
 package org.jf.dexlib.Interface;
 
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
 
@@ -9,6 +8,8 @@ import org.jf.dexlib.ClassDataItem.EncodedMethod;
 import org.jf.dexlib.CodeItem;
 import org.jf.dexlib.MethodIdItem;
 import org.jf.dexlib.Code.Analysis.AnalyzedInstruction;
+import org.jf.dexlib.Code.Analysis.InlineMethodResolver;
+import org.jf.dexlib.Code.Analysis.MethodAnalyzer;
 import org.jf.dexlib.Code.Analysis.graphs.CDG;
 import org.jf.dexlib.Code.Analysis.graphs.CFG;
 import org.jf.dexlib.Code.Analysis.graphs.DominanceFrontiers;
@@ -28,6 +29,18 @@ public class DexMethod {
 	private final EncodedMethod encMethod;
 	private SoftReference<CFG> cfg;
 	private SoftReference<CFG> cfgWithExc;
+
+	public static DexMethod build(final EncodedMethod encMethod) {
+		return build(encMethod, false, null);
+	}
+	
+	public static DexMethod build(final EncodedMethod encMethod, final boolean deodex, final InlineMethodResolver inlineResolver) {
+		final MethodAnalyzer analyzer = new MethodAnalyzer(encMethod, deodex, inlineResolver);
+        analyzer.analyze();
+        final List<AnalyzedInstruction> instrList = analyzer.getInstructions();
+        
+        return new DexMethod(instrList, encMethod);
+	}
 	
 	public DexMethod(final List<AnalyzedInstruction> instructions, final EncodedMethod encMethod) {
 		this.instructions = Collections.unmodifiableList(instructions);
