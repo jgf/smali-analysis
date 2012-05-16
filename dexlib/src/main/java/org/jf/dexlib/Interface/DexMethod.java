@@ -98,4 +98,8 @@ public class DexMethod {
 
 		return DominanceFrontiers.compute(reversedCfg, cfg.getExit());
 	}
+	
+	public String toString() {
+		return "DexMethod(" + encMethod.method.getMethodString() + "): " + instructions.size() + " instructions";
+	}
 }

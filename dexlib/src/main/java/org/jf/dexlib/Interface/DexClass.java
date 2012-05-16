@@ -39,4 +39,7 @@ public class DexClass {
 		return cDef;
 	}
 	
+	public String toString() {
+		return "DexClass(" + cDefItem.getClassType().getTypeDescriptor() + "): " + methods.size() + " methods";
+	}
 }
