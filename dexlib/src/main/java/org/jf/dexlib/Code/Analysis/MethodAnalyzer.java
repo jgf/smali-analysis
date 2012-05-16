@@ -479,7 +479,7 @@ public class MethodAnalyzer {
     private void propagateRegisterToSuccessors(AnalyzedInstruction instruction, int registerNumber,
                                                BitSet changedInstructions) {
         RegisterType postRegisterType = instruction.getPostInstructionRegisterType(registerNumber);
-        for (AnalyzedInstruction successor: startOfMethod.getSuccessors()) {
+        for (AnalyzedInstruction successor: instruction.getSuccessors()) {
             if (successor.mergeRegister(registerNumber, postRegisterType, analyzedInstructions)) {
                 changedInstructions.set(successor.instructionIndex);
             }
