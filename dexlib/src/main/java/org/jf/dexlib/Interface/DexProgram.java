@@ -15,11 +15,11 @@ public class DexProgram {
 
 	private final List<DexClass> classes = new LinkedList<DexClass>();
 	private final SyntheticAccessorResolver synth;
-	private final String dexFile;
+	private final String name;
 	
-	DexProgram(final String dexFile, final SyntheticAccessorResolver synth) {
+	public DexProgram(final String name, final SyntheticAccessorResolver synth) {
 		this.synth = synth;
-		this.dexFile = dexFile;
+		this.name = name;
 	}
 	
 	public SyntheticAccessorResolver getSyntheticResolver() {
@@ -35,7 +35,7 @@ public class DexProgram {
 	}
 	
 	public String toString() {
-		return "DexProgram(" + dexFile +"): " + classes.size() + " classes";
+		return "DexProgram(" + name +"): " + classes.size() + " classes";
 	}
 	
 }

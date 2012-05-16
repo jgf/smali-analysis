@@ -18,7 +18,7 @@ public class DexClass {
 	private final ClassDef cDef;
 	private final List<DexMethod> methods = new LinkedList<DexMethod>();
 	
-	private DexClass(final ClassDefItem cDefItem, final ClassDef cDef) {
+	public DexClass(final ClassDefItem cDefItem, final ClassDef cDef) {
 		this.cDefItem = cDefItem;
 		this.cDef = cDef;
 	}

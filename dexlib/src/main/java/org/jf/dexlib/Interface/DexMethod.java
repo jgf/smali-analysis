@@ -29,7 +29,7 @@ public class DexMethod {
 	private SoftReference<CFG> cfg;
 	private SoftReference<CFG> cfgWithExc;
 	
-	private DexMethod(final List<AnalyzedInstruction> instructions, final EncodedMethod encMethod) {
+	public DexMethod(final List<AnalyzedInstruction> instructions, final EncodedMethod encMethod) {
 		this.instructions = Collections.unmodifiableList(instructions);
 		this.encMethod = encMethod;
 	}
