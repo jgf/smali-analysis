@@ -1,5 +1,6 @@
 package org.jf.dexlib.Interface;
 
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
@@ -25,8 +26,8 @@ public class DexMethod {
 	
 	private final List<AnalyzedInstruction> instructions;
 	private final EncodedMethod encMethod;
-	private WeakReference<CFG> cfg;
-	private WeakReference<CFG> cfgWithExc;
+	private SoftReference<CFG> cfg;
+	private SoftReference<CFG> cfgWithExc;
 	
 	private DexMethod(final List<AnalyzedInstruction> instructions, final EncodedMethod encMethod) {
 		this.instructions = Collections.unmodifiableList(instructions);
@@ -49,14 +50,14 @@ public class DexMethod {
 		if (includeExceptions) {
 			if (cfgWithExc == null || cfgWithExc.get() == null) {
 				final CFG tmp = CFG.build(instructions, getId().getMethodString(), true);
-				cfgWithExc = new WeakReference<CFG>(tmp);
+				cfgWithExc = new SoftReference<CFG>(tmp);
 			}
 			
 			return cfgWithExc.get();
 		} else {
 			if (cfg == null || cfg.get() == null) {
 				final CFG tmp = CFG.build(instructions, getId().getMethodString(), false);
-				cfg = new WeakReference<CFG>(tmp);
+				cfg = new SoftReference<CFG>(tmp);
 			}
 			
 			return cfg.get();
