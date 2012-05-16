@@ -39,7 +39,7 @@ public class DexAnalysis {
 		this.conf = conf;
 	}
 	
-	public DexProgram analyze(final String programDexFile) {
+	public DexProgram analyze(final String programDexFile) throws DexAnalysisException {
 		return null;
 	}
 	
