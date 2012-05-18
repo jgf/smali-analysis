@@ -149,7 +149,7 @@ public class BakSmaliAnalysis implements DexAnalysis<BakSmaliAnalysis.BakSmaliIn
 		// Read in and parse the dex file
 		DexFile dexFile = null;
 		try {
-			dexFile = new DexFile(dexFileFile, true, false);
+			dexFile = new DexFile(dexFileFile, conf.preserveSignedRegisters, conf.skipInstructions);
 		} catch (IOException exc) {
 			exc.printStackTrace(conf.out);
 			throw new DexAnalysisException(exc);
@@ -197,6 +197,8 @@ public class BakSmaliAnalysis implements DexAnalysis<BakSmaliAnalysis.BakSmaliIn
 		public PrintStream out = System.out;
 		public boolean deodex = false;
 		public InlineMethodResolver inlineResolver = null;
+		public final boolean preserveSignedRegisters = true;
+		public final boolean skipInstructions = false;
 		
 		public String toString() {
 			final StringBuilder sb = new StringBuilder("BakSmaliAnalysis configuration:\n");

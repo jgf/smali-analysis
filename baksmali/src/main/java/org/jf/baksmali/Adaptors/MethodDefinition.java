@@ -297,7 +297,7 @@ public class MethodDefinition {
             return methodItems;
         }
 
-        if (baksmali.registerInfo != 0 || baksmali.deodex || baksmali.verify || baksmali.dumpGraph) {
+        if (baksmali.registerInfo != 0 || baksmali.deodex || baksmali.verify) {
             addAnalyzedInstructionMethodItems(methodItems);
         } else {
             addInstructionMethodItems(methodItems);

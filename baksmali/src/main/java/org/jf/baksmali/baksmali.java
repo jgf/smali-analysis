@@ -28,27 +28,19 @@
 
 package org.jf.baksmali;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import org.jf.baksmali.Adaptors.ClassDefinition;
+import org.jf.dexlib.ClassDefItem;
+import org.jf.dexlib.Code.Analysis.*;
+import org.jf.dexlib.DexFile;
+import org.jf.util.ClassFileNameHandler;
+import org.jf.util.IndentingWriter;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.jf.baksmali.Adaptors.ClassDefinition;
-import org.jf.dexlib.ClassDefItem;
-import org.jf.dexlib.DexFile;
-import org.jf.dexlib.Code.Analysis.ClassPath;
-import org.jf.dexlib.Code.Analysis.CustomInlineMethodResolver;
-import org.jf.dexlib.Code.Analysis.InlineMethodResolver;
-import org.jf.dexlib.Code.Analysis.SyntheticAccessorResolver;
-import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
-import org.jf.util.ClassFileNameHandler;
-import org.jf.util.IndentingWriter;
 
 public class baksmali {
     public static boolean noParameterRegisters = false;
@@ -59,7 +51,6 @@ public class baksmali {
     public static boolean noAccessorComments = false;
     public static boolean deodex = false;
     public static boolean verify = false;
-    public static boolean dumpGraph = false;
     public static InlineMethodResolver inlineResolver = null;
     public static int registerInfo = 0;
     public static String bootClassPath;
@@ -67,25 +58,11 @@ public class baksmali {
     public static SyntheticAccessorResolver syntheticAccessorResolver = null;
 
     public static void disassembleDexFile(String dexFilePath, DexFile dexFile, boolean deodex, String outputDirectory,
-            String[] classPathDirs, String bootClassPath, String extraBootClassPath,
-            boolean noParameterRegisters, boolean useLocalsDirective,
-            boolean useSequentialLabels, boolean outputDebugInfo, boolean addCodeOffsets,
-            boolean noAccessorComments, int registerInfo, boolean verify, boolean ignoreErrors)
-    {
-        disassembleDexFile(dexFilePath, dexFile, deodex, outputDirectory, classPathDirs, bootClassPath, 
-                extraBootClassPath, noParameterRegisters, useLocalsDirective, useSequentialLabels, 
-                outputDebugInfo, addCodeOffsets, noAccessorComments, registerInfo, verify, ignoreErrors, null,
-                false, false, false, false, false, null);
-    }
-    
-    public static void disassembleDexFile(String dexFilePath, DexFile dexFile, boolean deodex, String outputDirectory,
                                           String[] classPathDirs, String bootClassPath, String extraBootClassPath,
                                           boolean noParameterRegisters, boolean useLocalsDirective,
                                           boolean useSequentialLabels, boolean outputDebugInfo, boolean addCodeOffsets,
-                                          boolean noAccessorComments, int registerInfo, boolean verify, boolean ignoreErrors,
-                                          String inlineTable,
-                                          boolean dumpWALA, boolean graphCFG, boolean graphDOM, boolean graphCDG, boolean graphIncludeExc,
-                                          String outputGraphDir)
+                                          boolean noAccessorComments, int registerInfo, boolean verify,
+                                          boolean ignoreErrors, String inlineTable)
     {
         baksmali.noParameterRegisters = noParameterRegisters;
         baksmali.useLocalsDirective = useLocalsDirective;
@@ -97,7 +74,6 @@ public class baksmali {
         baksmali.registerInfo = registerInfo;
         baksmali.bootClassPath = bootClassPath;
         baksmali.verify = verify;
-        baksmali.dumpGraph = graphCDG || graphCFG || graphDOM || dumpWALA;
 
         ClassPath.ClassPathErrorHandler classPathErrorHandler = null;
         if (ignoreErrors) {
@@ -109,7 +85,7 @@ public class baksmali {
             };
         }
 
-        if (registerInfo != 0 || deodex || verify || dumpGraph) {
+        if (registerInfo != 0 || deodex || verify) {
             try {
                 String[] extraBootClassPathArray = null;
                 if (extraBootClassPath != null && extraBootClassPath.length() > 0) {
@@ -157,24 +133,6 @@ public class baksmali {
         if (!noAccessorComments) {
             syntheticAccessorResolver = new SyntheticAccessorResolver(dexFile);
         }
-        
-        ClassFileNameHandler graphPrefixNameHandler = null;
-        if (dumpGraph) {
-            if (outputGraphDir != null) {
-                File outputGraphFile = new File(outputGraphDir);
-                if (!outputGraphFile.exists()) {
-                    if (!outputGraphFile.mkdirs()) {
-                        System.err.println("Can't create the graph output directory " + outputGraphDir);
-                        System.exit(1);
-                    }
-                }
-                
-                graphPrefixNameHandler = new ClassFileNameHandler(outputGraphFile, ".");
-            } else {
-                outputGraphDir = outputDirectory;
-                graphPrefixNameHandler = new ClassFileNameHandler(outputDirectoryFile, ".");
-            }
-        }
 
         //sort the classes, so that if we're on a case-insensitive file system and need to handle classes with file
         //name collisions, then we'll use the same name for each class, if the dex file goes through multiple
@@ -198,7 +156,7 @@ public class baksmali {
              * package name are separated by '/'
              */
 
-            if (registerInfo != 0 || deodex || verify || dumpGraph) {
+            if (registerInfo != 0 || deodex || verify) {
                 //If we are analyzing the bytecode, make sure that this class is loaded into the ClassPath. If it isn't
                 //then there was some error while loading it, and we should skip it
                 ClassPath.ClassDef classDef = ClassPath.getClassDef(classDefItem.getClassType(), false);
@@ -245,24 +203,6 @@ public class baksmali {
 
                 writer = new IndentingWriter(bufWriter);
                 classDefinition.writeTo((IndentingWriter)writer);
-                
-                if (dumpGraph) {
-                    File graphFilePrefix = graphPrefixNameHandler.getUniqueFilenameForClass(classDescriptor);
-                    File graphDir = graphFilePrefix.getParentFile();
-                    boolean skip = false;
-                    if (!graphDir.exists()) {
-                        if (!graphDir.mkdirs()) {
-                            System.err.println("Unable to create directory " + graphDir.toString() + " - skipping graph output");
-                            skip = true;
-                        }
-                    }
-
-                    if (!skip) {
-                        String filePrefix = graphFilePrefix.toString();
-                        GraphDumper gDump = new GraphDumper(filePrefix, dumpWALA, graphCFG, graphDOM, graphCDG, graphIncludeExc);
-                        classDefinition.dumpGraphs(gDump);
-                    }
-                }
             } catch (Exception ex) {
                 System.err.println("\n\nError occured while disassembling class " + classDescriptor.replace('/', '.') + " - skipping class");
                 ex.printStackTrace();

@@ -1,5 +1,6 @@
 package org.jf.dexlib.Interface;
 
+import java.io.FileNotFoundException;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.jf.dexlib.Code.Analysis.graphs.CFG;
 import org.jf.dexlib.Code.Analysis.graphs.DominanceFrontiers;
 import org.jf.dexlib.Code.Analysis.graphs.Dominators;
 import org.jf.dexlib.Code.Analysis.graphs.Dominators.DomTree;
+import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.EdgeReversedGraph;
 
@@ -97,6 +99,10 @@ public class DexMethod {
 		final DirectedGraph<CFG.Node, CFG.Edge> reversedCfg = new EdgeReversedGraph<CFG.Node, CFG.Edge>(cfg);
 
 		return DominanceFrontiers.compute(reversedCfg, cfg.getExit());
+	}
+	
+	public void dumpGraphs(final GraphDumper gDump) throws FileNotFoundException {
+        gDump.dump(instructions, encMethod.method.getVirtualMethodString());
 	}
 	
 	public String toString() {

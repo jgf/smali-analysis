@@ -1,11 +1,13 @@
 package org.jf.dexlib.Interface;
 
+import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Analysis.SyntheticAccessorResolver;
+import org.jf.dexlib.Code.Analysis.graphs.GraphDumper;
 
 /**
  * 
@@ -37,6 +39,12 @@ public class DexProgram {
 	
 	public void addClass(final DexClass cls) {
 		classes.add(cls);
+	}
+	
+	public void dumpGraphs(final GraphDumper gDump) throws FileNotFoundException {
+		for (final DexClass dexClass : classes) {
+			dexClass.dumpGraphs(gDump);
+		}
 	}
 	
 	public String toString() {
