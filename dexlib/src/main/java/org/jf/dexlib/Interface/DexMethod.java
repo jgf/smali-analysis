@@ -102,7 +102,7 @@ public class DexMethod {
 	}
 	
 	public void dumpGraphs(final GraphDumper gDump) throws FileNotFoundException {
-        gDump.dump(instructions, encMethod.method.getVirtualMethodString());
+        gDump.dump(this, encMethod.method.getVirtualMethodString());
 	}
 	
 	public String toString() {

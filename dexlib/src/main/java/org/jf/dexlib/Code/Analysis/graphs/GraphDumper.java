@@ -1,51 +1,73 @@
 package org.jf.dexlib.Code.Analysis.graphs;
 
+import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.List;
 
-import org.jf.dexlib.Code.Analysis.AnalyzedInstruction;
+import org.jf.dexlib.Code.Analysis.graphs.Dominators.DomTree;
+import org.jf.dexlib.Interface.DexMethod;
 
 public class GraphDumper {
 
-    private final String prefix;
+    private final String toDir;
+    private final String fileNamePrefix;
     private final boolean dumpCFG;
     private final boolean dumpDOM;
     private final boolean dumpCDG;
-    private final boolean dumpWALA;
     private final boolean includeExc;
     
-    public GraphDumper(String prefix, boolean dumpWALA, boolean dumpCFG, boolean dumpDOM, boolean dumpCDG,
-            boolean includeExc) {
-        this.prefix = prefix;
+    public GraphDumper(final String toDir, final String fileNamePrefix, final boolean dumpCFG,
+    		final boolean dumpDOM, final boolean dumpCDG, final boolean includeExc) {
+    	if (toDir == null || toDir.isEmpty()) {
+    		this.toDir = "." + File.separator;
+    	} else {
+    		this.toDir = (toDir.endsWith(File.separator) ? toDir : toDir + File.separator);
+    	}
+
+    	if (fileNamePrefix == null) {
+    		this.fileNamePrefix = "";
+    	} else {
+    		this.fileNamePrefix = fileNamePrefix.replace(File.separator, "_");
+    	}
+
         this.dumpCFG = dumpCFG;
         this.dumpDOM = dumpDOM;
         this.dumpCDG = dumpCDG;
-        this.dumpWALA = dumpWALA;
         this.includeExc = includeExc;
     }
-    
-    public void dump(final List<AnalyzedInstruction> instructions, final String name) throws FileNotFoundException {
-    	if (dumpWALA) {
-//    		Dex2Wala.build(instructions, name);
-    	}
-    	
+
+    public void dump(final DexMethod dexMethod, final String name) throws FileNotFoundException {
         if (!dumpCFG && !dumpDOM && !dumpCDG) {
             return;
         }
         
-        final String fileName = prefix + WriteGraphToDot.sanitizeFileName(name);
-        final CFG cfg = CFG.build(instructions, name, includeExc);
+        final File dir = new File(toDir);
+        if (dir.exists() && (!dir.isDirectory() || !dir.canWrite())) {
+        	throw new FileNotFoundException(dir.getAbsolutePath() + " is not a writable directory.");
+        } else if (!dir.exists()) {
+        	if (!dir.mkdirs()) {
+        		throw new FileNotFoundException("Could not create directory: " + dir.getAbsolutePath());
+        	} else {
+        		System.out.println("Created " + dir.getAbsolutePath());
+        	}
+        }
+        
+        final String fileName = toDir + WriteGraphToDot.sanitizeFileName(fileNamePrefix + name);
+        
+        CFG cfg = null;
         
         if (dumpCFG) {
+            cfg = dexMethod.getControlFlowGraph(includeExc);
             WriteGraphToDot.write(cfg, fileName + ".cfg.dot");
         }
         
         if (dumpDOM) {
-            throw new UnsupportedOperationException("No dominator computation implemented by now.");
+        	final DomTree<CFG.Node> domTree = dexMethod.getDominationTree(includeExc);
+            WriteGraphToDot.write(domTree, fileName + ".dom.dot");
         }
         
         if (dumpCDG) {
-            throw new UnsupportedOperationException("No control dependency computation implemented by now.");
+            final CDG cdg = dexMethod.getControlDependenceGraph(includeExc);
+            WriteGraphToDot.write(cdg, fileName + ".cdg.dot");
         }
     }
     
