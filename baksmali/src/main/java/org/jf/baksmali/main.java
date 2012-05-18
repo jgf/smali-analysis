@@ -108,18 +108,12 @@ public class main {
         boolean deodex = false;
         boolean verify = false;
         boolean ignoreErrors = false;
-        boolean dumpWALA = false;   // dump WALA instructions
-        boolean graphCFG = false;   // dump control flow graphs
-        boolean graphCDG = false;   // dump control dependence graphs
-        boolean graphDOM = false;   // dump dominator trees
-        boolean graphIncludeExceptions = false;   // include uncatched exceptions
 
         int apiLevel = 14;
 
         int registerInfo = 0;
 
         String outputDirectory = "out";
-        String outputGraphDir = null; // use outputDirectory if not set
         String dumpFileName = null;
         String outputDexFileName = null;
         String inputDexFileName = null;
@@ -138,9 +132,6 @@ public class main {
             String opt = option.getOpt();
 
             switch (opt.charAt(0)) {
-                case '@':
-                    // do nothing - this is a separator for the options parser
-                break;
                 case 'v':
                     version();
                     return;
@@ -174,58 +165,6 @@ public class main {
                 case 'f':
                     addCodeOffsets = true;
                     break;
-                case 'g': {
-                    String[] values = option.getValue().split(",");
-                    if (values != null && values.length > 0) {
-                        
-                        if (values[values.length - 1].contains("=")) {
-                            // make two seperate args out of the last arg.
-                            // e.g. ['CFG', 'CDG=/tmp'] => ['CFG', 'CDG', '=/tmp']
-                            String[] tmp = new String[values.length + 1];
-                            System.arraycopy(values, 0, tmp, 0, values.length - 1);
-                            final String lastArg = values[values.length - 1];
-                            final int indexOfEq = lastArg.indexOf('=');
-                            tmp[values.length - 1] = lastArg.substring(0, indexOfEq);
-                            tmp[values.length] = lastArg.substring(indexOfEq);
-                            values = tmp;
-                        }
-                        
-                        for (int val = 0; val < values.length; val++) {
-                            final String value = values[val];
-                            if (value.equalsIgnoreCase("CFG")) {
-                                graphCFG = true;
-                            } else if (value.equalsIgnoreCase("DOM")) {
-                                graphDOM = true;
-                            } else if (value.equalsIgnoreCase("WALA")) {
-                                dumpWALA = true;
-                            } else if (value.equalsIgnoreCase("CDG")) {
-                                graphCDG = true;
-                            } else if (value.equalsIgnoreCase("EXC")) {
-                                graphIncludeExceptions = true;
-                            } else if (value.startsWith("=")) {
-                                final String dir = value.substring(1);
-                                
-                                final File testDir = new File(dir);
-                                if (!(testDir.exists() && testDir.isDirectory() && testDir.canWrite()) && !testDir.mkdirs()) {
-                                    System.err.println("'" + dir + "' is not an existing and writable directory and it could not be created.");
-                                    usage();
-                                    return;
-                                } else {
-                                    outputGraphDir = dir;
-                                    // append path seperator if needed
-                                    if (outputGraphDir.length() > 0 && !outputGraphDir.endsWith("" + File.separatorChar)) {
-                                        outputGraphDir += File.separatorChar;
-                                    }
-                                }
-                            } else {
-                                System.err.println("Unknown argument in option '-g': " + value);
-                                usage();
-                                return;
-                            }
-                        }
-                    }
-                    
-                    } break;
                 case 'r':
                     String[] values = commandLine.getOptionValues('r');
 
@@ -354,8 +293,7 @@ public class main {
                 baksmali.disassembleDexFile(dexFileFile.getPath(), dexFile, deodex, outputDirectory,
                         bootClassPathDirsArray, bootClassPath, extraBootClassPathEntries.toString(),
                         noParameterRegisters, useLocalsDirective, useSequentialLabels, outputDebugInfo, addCodeOffsets,
-                        noAccessorComments, registerInfo, verify, ignoreErrors, inlineTable,
-                        dumpWALA, graphCFG, graphDOM, graphCDG, graphIncludeExceptions, outputGraphDir);
+                        noAccessorComments, registerInfo, verify, ignoreErrors, inlineTable);
             }
 
             if ((doDump || write) && !dexFile.isOdex()) {
@@ -395,7 +333,7 @@ public class main {
     }
 
     private static void usage() {
-        usage(true);
+        usage(false);
     }
 
     /**
@@ -408,7 +346,6 @@ public class main {
         System.exit(0);
     }
 
-    @SuppressWarnings("static-access")
     private static void buildOptions() {
         Option versionOption = OptionBuilder.withLongOpt("version")
                 .withDescription("prints the version then exits")
@@ -529,22 +466,6 @@ public class main {
                 .withDescription("perform bytecode verification")
                 .create("V");
 
-        Option dumpGraphOption = OptionBuilder.withLongOpt("dump-graph")
-            .hasArg()
-            .withArgName("DUMP_GRAPHS")
-            .withDescription("write the specificed type(s) of graphs for each method to a .dot file. " +
-                    "At least one of the options CFG, DOM or CDG have to be specified. All values " +
-                    "have to be seperated with a ',' with NO SPACE between them.\nValid values are:\n" + 
-                    "CFG: control flow graph\n" +
-                    "DOM: dominator tree\n" + 
-                    "CDG: control dependence graph\n" +
-                    "EXC: include uncatched exceptions in analysis\n" +
-                    "=<DIR>: only valid as last option. Sets the output directory to the specified value. " +
-                    "This will override the default behaviour: " +
-                    "If not specified otherwise the graph files are put in the same directory as the " +
-                    "corresponding .smali file.\n" +
-                    "Some examples of valid options: '-g CFG,DOM=/tmp', '-g CFG' or '-g CDG,EXC'")
-            .create("g");
         Option inlineTableOption = OptionBuilder.withLongOpt("inline-table")
                 .withDescription("specify a file containing a custom inline method table to use for deodexing")
                 .hasArg()
@@ -573,7 +494,6 @@ public class main {
         debugOptions.addOption(sortOption);
         debugOptions.addOption(fixSignedRegisterOption);
         debugOptions.addOption(verifyDexOption);
-        debugOptions.addOption(dumpGraphOption);
         debugOptions.addOption(inlineTableOption);
 
         for (Object option: basicOptions.getOptions()) {
