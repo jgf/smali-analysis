@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jf.dexlib.DexFile;
 import org.jf.dexlib.Code.Analysis.SyntheticAccessorResolver;
 
 /**
@@ -17,6 +18,10 @@ public class DexProgram {
 	private final SyntheticAccessorResolver synth;
 	private final String name;
 	
+	public DexProgram(final String name, final DexFile file) {
+		this(name, new SyntheticAccessorResolver(file));
+	}
+
 	public DexProgram(final String name, final SyntheticAccessorResolver synth) {
 		this.synth = synth;
 		this.name = name;

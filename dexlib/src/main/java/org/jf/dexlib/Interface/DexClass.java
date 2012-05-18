@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jf.dexlib.ClassDefItem;
-import org.jf.dexlib.Code.Analysis.ClassPath.ClassDef;
 
 /**
  * 
@@ -15,12 +14,10 @@ import org.jf.dexlib.Code.Analysis.ClassPath.ClassDef;
 public class DexClass {
 
 	private final ClassDefItem cDefItem;
-	private final ClassDef cDef;
 	private final List<DexMethod> methods = new LinkedList<DexMethod>();
 	
-	public DexClass(final ClassDefItem cDefItem, final ClassDef cDef) {
+	public DexClass(final ClassDefItem cDefItem) {
 		this.cDefItem = cDefItem;
-		this.cDef = cDef;
 	}
 
 	public List<DexMethod> getMethods() {
@@ -33,10 +30,6 @@ public class DexClass {
 	
 	public ClassDefItem getItem() {
 		return cDefItem;
-	}
-	
-	public ClassDef getDef() {
-		return cDef;
 	}
 	
 	public String toString() {
